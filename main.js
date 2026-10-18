@@ -29,27 +29,98 @@ function setupPad() {
 window.TEO_PAD = PAD;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupPad); else setupPad();
 
+// ---------- tilt-to-roll (deviceorientation) ----------
+// TILT.dir is an analog -1..1 value; keys/buttons override it while pressed. iOS 13+ needs requestPermission() from a tap.
+const TILT = { on: false, dir: 0, raw: 0, neutral: null, recal: true, granted: false, lastEvt: 0, DEAD: 3, FULL: 25, SMOOTH: 0.25 };
+function tiltScreenAngle() {
+  let a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (typeof window.orientation === 'number' ? window.orientation : 0);
+  return ((a % 360) + 360) % 360;
+}
+function tiltRoll(e) {   // left/right roll in degrees, positive = tip the right-hand side of the screen down
+  const a = tiltScreenAngle(), b = e.beta || 0, g = e.gamma || 0;
+  if (a === 90) return b; if (a === 270) return -b; if (a === 180) return -g; return g;
+}
+function onTiltEvent(e) {
+  if (e.beta == null && e.gamma == null) return;
+  TILT.granted = true; TILT.lastEvt = performance.now();
+  const r = tiltRoll(e); TILT.raw = r;
+  if (!TILT.on) return;
+  if (TILT.recal || TILT.neutral === null) { TILT.neutral = r; TILT.recal = false; }
+  let d = r - TILT.neutral; d = ((d + 180) % 360 + 360) % 360 - 180;
+  const m = Math.abs(d), t = m <= TILT.DEAD ? 0 : Math.min(1, (m - TILT.DEAD) / (TILT.FULL - TILT.DEAD));
+  const target = Math.sign(d) * t;
+  TILT.dir += (target - TILT.dir) * TILT.SMOOTH;
+  if (Math.abs(TILT.dir) < 0.01 && target === 0) TILT.dir = 0;
+}
+function tiltUI() {
+  const b = document.getElementById('bTilt'), c = document.getElementById('bCentre'), pr = document.getElementById('tiltPrompt');
+  if (!b) return;
+  b.classList.toggle('on', TILT.on); b.textContent = TILT.on ? 'TILT ON' : 'TILT';
+  if (c) c.style.display = TILT.on ? 'flex' : 'none';
+  document.body.classList.toggle('tilting', TILT.on);
+  if (pr) pr.style.display = (!TILT.on && localStorage.getItem('teoTilt') === '1') ? 'block' : 'none';
+}
+function tiltSet(on) {
+  TILT.on = on; TILT.dir = 0; TILT.recal = true;
+  try { localStorage.setItem('teoTilt', on ? '1' : '0'); } catch (_) { }
+  tiltUI();
+}
+function tiltEnable() {   // must run synchronously inside the tap handler for iOS
+  const D = window.DeviceOrientationEvent;
+  if (D && typeof D.requestPermission === 'function') {
+    D.requestPermission().then(s => { if (s !== 'denied') tiltSet(true); else { tiltSet(false); alert('Motion access was denied. To allow it, close and reopen this page (or Safari > Settings > Motion & Orientation Access).'); } })
+      .catch(() => { tiltSet(false); });
+  } else tiltSet(true);
+}
+function setupTilt() {
+  const b = document.getElementById('bTilt'), c = document.getElementById('bCentre'), pr = document.getElementById('tiltPrompt');
+  window.addEventListener('deviceorientation', onTiltEvent);
+  const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (!b || !(touch || 'DeviceOrientationEvent' in window)) return;
+  b.style.display = 'flex';
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  b.addEventListener('click', (e) => { stop(e); if (TILT.on) tiltSet(false); else tiltEnable(); });
+  if (c) c.addEventListener('click', (e) => { stop(e); TILT.recal = true; TILT.dir = 0; flash(c); });
+  if (pr) pr.addEventListener('click', (e) => { stop(e); tiltEnable(); });
+  for (const el of [b, c, pr]) if (el) for (const t of ['pointerdown', 'touchstart', 'mousedown', 'dblclick']) el.addEventListener(t, (e) => e.stopPropagation(), { passive: true });
+  function flash(el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 250); }
+  // persisted choice: enable directly where no permission is needed; iOS shows a tap prompt instead
+  let saved = null; try { saved = localStorage.getItem('teoTilt'); } catch (_) { }
+  const needsPerm = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
+  if (saved === '1') { if (!needsPerm) tiltSet(true); else DeviceOrientationEvent.requestPermission().then(r => { if (r !== 'denied') tiltSet(true); }).catch(() => { }); }
+  tiltUI();
+  // try to lock landscape (works in fullscreen / installed PWAs on some browsers; iOS ignores it)
+  try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => { }); } catch (_) { }
+  const reorient = () => { TILT.recal = true; };
+  if (screen.orientation) screen.orientation.addEventListener('change', reorient); window.addEventListener('orientationchange', reorient);
+}
+window.TEO_TILT = TILT; window.TEO_TILT_SET = tiltSet;
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupTilt); else setupTilt();
+
 const TEX = {
   bg: { L0_sky: 'assets/bg/L0_sky.jpg', L1_far: 'assets/bg/L1_far.webp', L2_mid: 'assets/bg/L2_mid.webp', L3_near: 'assets/bg/L3_near.webp' },
   sprites: ['jade_bead', 'speed_gate', 'sun_fragment', 'mask_roller', 'serpent_spirit', 'orb', 'orb_spec', 'cracked_wall',
     'mask_a', 'mask_b', 'serpent_head', 'xolotl', 'spike_strip', 'tilting_slab'],
   blocks: ['block_fill', 'block_top', 'block_corner_L', 'block_corner_R', 'ramp_22_5', 'ramp_30', 'ramp_45', 'spriteshape_fill', 'edge_strip'],
-  sfx: ['jump_01', 'collect_beads', 'collect_pyrite_bell', 'hit_01', 'hit_hurt_01', 'fire_01', 'hit_stone_01', 'land_stone_01', 'creak_01', 'door_open'],
+  sfx: ['jump', 'land', 'land_stone', 'jade', 'pyrite', 'sun_fragment', 'fire', 'hit', 'enemy_death', 'goal_unlock', 'fw_launch', 'fw_pop', 'fw_crackle', 'card_whoosh',
+    'card_impact', 'ui_click', 'ui_tick', 'star', 'title_boom', 'roll_loop', 'stone_bonk', 'creak', 'door_open'],
 };
 
 const artKey = (type) => { const p = LV && LV.art && LV.art.sprites[type]; return p ? p.split('/').pop().replace('.png', '') : type; };
 
 class Game extends Phaser.Scene {
   constructor() { super('game'); }
+  init(data) { this.levelIndex = (data && data.level) || 0; this.L = LEVELS[this.levelIndex]; }
 
   preload() {
-    this.load.json('level', V('assets/levels/level01.json'));
-    this.load.json('terrain', V('assets/terrain/level01_terrain.json'));
-    this.load.on('filecomplete-json-terrain', (key, type, data) => data.segments.forEach((sg, i) => this.load.image('seg' + i, V('assets/terrain/' + sg.image))));
+    const L = this.L;
+    this.load.json(L.id, V(L.json));
+    this.load.json(L.id + '_terrain', V(L.terrain));
+    this.load.once('filecomplete-json-' + L.id + '_terrain', (key, type, data) => data.segments.forEach((sg, i) => this.load.image(L.id + '_seg' + i, V(L.terrainDir + sg.image))));
     for (const [k, p] of Object.entries(TEX.bg)) this.load.image(k, V(p));
     for (const s of TEX.sprites) this.load.image(s, V('assets/sprites/' + s + '.png'));
-    for (const s of TEX.sfx) this.load.audio(s, V('assets/sfx/' + s + '.ogg'));
-    this.load.audio('music', V('assets/music/temple.ogg'));
+    preloadCommon(this);
+    this.load.audio('music_' + L.music, V('assets/audio/music/' + L.music + '.mp3'));
   }
 
   // level units (+y up) -> world pixels (+y down)
@@ -57,7 +128,7 @@ class Game extends Phaser.Scene {
   Y(y) { return (LV.bounds.yMax - y) * U; }
 
   create() {
-    LV = this.cache.json.get('level'); this.TR = this.cache.json.get('terrain');
+    LV = JSON.parse(JSON.stringify(this.cache.json.get(this.L.id))); this.TR = this.cache.json.get(this.L.id + '_terrain');   // clone: placement resolves in place
     MB = Phaser.Physics.Matter.Matter.Body; MBodies = Phaser.Physics.Matter.Matter.Bodies;
     this.prepareTerrain();
     const b = LV.bounds;
@@ -71,7 +142,8 @@ class Game extends Phaser.Scene {
     this.dyn = [];             // {body, img} pairs synced each frame
     this.counts = { jade_bead: 0, pyrite_sphere: 0, sun_fragment: 0 };
     this.totals = { jade_bead: 0, pyrite_sphere: 0, sun_fragment: 0 };
-    this.secretsFound = 0; this.done = false; this.lastGround = -1e9; this.lastJump = -1e9; this.facing = 1; this.prevSpeed = 0;
+    this.startTime = undefined; this.audioStarted = false; this.rollSnd = null; this.rollVol = 0; this.jadeChain = 0; this.stats = null;
+    this.pickupRefs = []; this.secretsFound = 0; this.done = false; this.lastGround = -1e9; this.lastJump = -1e9; this.facing = 1; this.prevSpeed = 0;
 
     this.buildTerrain(); this.buildSurfaceCache(); this.makeParticles(); this.shadows = [];
     this.buildDecor(); this.traps = []; this.buildSecrets(); this.buildPickups(); this.buildEnemies();
@@ -91,7 +163,7 @@ class Game extends Phaser.Scene {
     this.input.keyboard.on('keydown-J', () => this.fire());
     this.input.keyboard.on('keydown-R', () => this.respawn());
     this.input.keyboard.on('keydown-F', () => this.setFx(!this.fxOn));
-    this.input.keyboard.on('keydown-M', () => { if (this.music) this.music.setMute(!this.music.mute); });
+    this.input.keyboard.on('keydown-M', () => AUDIO.toggleMute());
     // canvas click fires toward the cursor; the DOM buttons sit above the canvas and swallow their own events, and we also
     // ignore any pointer whose DOM target is not the canvas itself
     this.input.on('pointerdown', (p) => { this.startAudio(); const tg = p.event && p.event.target; if (tg && tg !== this.game.canvas) return; if (p.leftButtonDown() || p.wasTouch) this.fire(p); });
@@ -102,7 +174,12 @@ class Game extends Phaser.Scene {
     this.matter.world.on('collisionactive', (e) => this.onCollide(e.pairs, false));
 
     this.makeHud();
-    window.TEO = { lowfx: LOWFX, fps: () => this.game.loop.actualFps, scene: this, teleport: (x, y) => this.teleport(x, y), state: () => this.debugState(), shots: () => this.shots || 0 };
+    this.events.once('shutdown', () => { if (this.rollSnd) { this.rollSnd.stop(); this.rollSnd.destroy(); } PAD.scene = null; });
+    if (AUDIO.unlocked()) this.startAudio();
+    setMenu(false);
+    window.TEO = { lowfx: LOWFX, fps: () => this.game.loop.actualFps, scene: this, teleport: (x, y) => this.teleport(x, y), state: () => this.debugState(), shots: () => this.shots || 0,
+      pickups: () => (this.pickupRefs || []).map((r, i) => ({ i, type: r.p.type, tag: r.p.tag || '', x: r.p.x, y: r.p.y, taken: !!r.taken })), goalLocked: () => this.goal.locked,
+      surf: (x) => LV.bounds.yMax - this.surfaceAt(x * U) / U };
   }
 
   // ---------- audio ----------
@@ -110,9 +187,16 @@ class Game extends Phaser.Scene {
     if (this.audioStarted) return;
     this.audioStarted = true;
     try { if (this.sound.context && this.sound.context.state === 'suspended') this.sound.context.resume(); } catch (e) { }
-    if (this.cache.audio.exists('music')) { this.music = this.sound.add('music', { loop: true, volume: 0.45 }); this.music.play(); }
+    MUSIC.play(this, 'music_' + this.L.music, 0.42);
+    if (this.cache.audio.exists('roll_loop')) { this.rollSnd = this.sound.add('roll_loop', { loop: true, volume: 0 }); this.rollSnd.play(); }
   }
-  sfx(k, vol = 0.6) { if (this.audioStarted && this.cache.audio.exists(k)) this.sound.play(k, { volume: vol }); }
+  sfx(k, vol = 0.6, rate = 1) { if (this.audioStarted && this.cache.audio.exists(k)) this.sound.play(k, { volume: vol, rate }); }
+  updateRollSound(sp, grounded) {
+    if (!this.rollSnd) return;
+    const v = grounded && !this.done ? Phaser.Math.Clamp((sp - 0.4) / 14, 0, 1) : 0;
+    this.rollVol = (this.rollVol || 0) + (v * 0.55 - (this.rollVol || 0)) * 0.15;
+    this.rollSnd.setVolume(this.rollVol); this.rollSnd.setRate(0.7 + Math.min(sp, 20) / 20 * 0.9);
+  }
 
   // ---------- parallax ----------
   makeParallax() {
@@ -175,7 +259,7 @@ class Game extends Phaser.Scene {
   buildTerrain() {
     for (let i = 0; i < this.segs.length; i++) {
       const r = this.segs[i];
-      this.add.image(r.ox, 0, 'seg' + i).setOrigin(0).setScale(this.TR.scale).setDepth(0);
+      this.add.image(r.ox, 0, this.L.id + '_seg' + i).setOrigin(0).setScale(this.TR.scale).setDepth(0);
     }
     // thin static segments whose top edge lies on the polyline, plus a small circle at every joint so convex
     // corners are rounded and the orb never catches a rectangle corner poking out of the surface
@@ -237,10 +321,10 @@ class Game extends Phaser.Scene {
   }
   triggerCrumble(tr) {
     if (tr.state !== 'idle') return;
-    tr.state = 'shaking'; this.sfx('creak_01', 0.7);
+    tr.state = 'shaking'; this.sfx('creak', 0.7);
     this.tweens.add({ targets: tr.img, x: tr.img.x + 3, duration: 50, yoyo: true, repeat: 6 });
     this.time.delayedCall(600, () => {
-      tr.state = 'falling'; this.groundBodiesDirty = true; this.sfx('hit_stone_01', 0.6);
+      tr.state = 'falling'; this.groundBodiesDirty = true; this.sfx('stone_bonk', 0.6);
       MB.setStatic(tr.body, false); tr.body.collisionFilter.mask = 0; MB.setDensity(tr.body, 0.01);
       this.dyn.push({ body: tr.body, img: tr.img, temp: true });
       this.tweens.add({ targets: tr.img, alpha: 0, delay: 600, duration: 500 });
@@ -285,7 +369,7 @@ class Game extends Phaser.Scene {
       if (p.type !== 'jade_bead') { this.fxGlow(img, 0xffb030, 5); this.tweens.add({ targets: img, angle: 360, duration: 6000, repeat: -1 }); }
       img.extras = [halo, glint, shadow];
       const body = this.matter.add.circle(img.x, img.y, size[p.type] * U * 0.45, { isStatic: true, isSensor: true, label: 'pickup' });
-      body.ref = { img, p };
+      body.ref = { img, p }; (this.pickupRefs = this.pickupRefs || []).push(body.ref);
     }
   }
   buildEnemies() {
@@ -328,12 +412,44 @@ class Game extends Phaser.Scene {
     }
     const g = LV.goal;
     const img = this.spr(artKey(g.type), g.x, g.y - 0.5, 2.6, 'b', 2);
-    const gh = this.add.image(img.x, img.y - 1.5 * U, 'fx_soft').setDepth(1.9).setTint(0xffc050).setBlendMode(Phaser.BlendModes.ADD).setScale(3).setAlpha(0.55);
+    const cx = img.x, cy = img.y - 1.5 * U;
+    const gh = this.add.image(cx, cy, 'fx_soft').setDepth(1.9).setTint(0xffc050).setBlendMode(Phaser.BlendModes.ADD).setScale(3).setAlpha(0.55);
     this.tweens.add({ targets: gh, scale: 3.8, alpha: 0.3, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    for (let i = 0; i < 3; i++) { const ry = this.add.image(img.x, img.y - 1.5 * U, 'fx_ray').setOrigin(0.5, 0).setDepth(1.8).setBlendMode(Phaser.BlendModes.ADD).setScale(0.6, 0.22).setAlpha(0.35).setRotation(i * 2.09); this.tweens.add({ targets: ry, rotation: ry.rotation + Math.PI * 2, duration: 14000, repeat: -1 }); }
-    this.fxGlow(img, 0xffc050, 4);
-    this.add.particles(img.x, img.y - 1.5 * U, 'fx_spark', { lifespan: 1400, speed: { min: 10, max: 40 }, scale: { start: 0.3, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xfff0b0, 0xffc050], blendMode: 'ADD', frequency: LOWFX ? 400 : 120, emitZone: { type: 'random', source: new Phaser.Geom.Circle(0, 0, 70) } }).setDepth(7);
+    const rays = [];
+    for (let i = 0; i < 3; i++) { const ry = this.add.image(cx, cy, 'fx_ray').setOrigin(0.5, 0).setDepth(1.8).setBlendMode(Phaser.BlendModes.ADD).setScale(0.6, 0.22).setAlpha(0.35).setRotation(i * 2.09); rays.push(ry); this.tweens.add({ targets: ry, rotation: ry.rotation + Math.PI * 2, duration: 14000, repeat: -1 }); }
+    const em = this.add.particles(cx, cy, 'fx_spark', { lifespan: 1400, speed: { min: 10, max: 40 }, scale: { start: 0.3, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xfff0b0, 0xffc050], blendMode: 'ADD', frequency: LOWFX ? 400 : 120, emitZone: { type: 'random', source: new Phaser.Geom.Circle(0, 0, 70) } }).setDepth(7);
     this.matter.add.rectangle(img.x, img.y - 1.3 * U, 1.6 * U, 2.6 * U, { isStatic: true, isSensor: true, label: 'goal' });
+    // locked until every jade, pyrite and sun fragment is collected: dim altar, stone seal, hint
+    const seal = this.add.image(cx, cy + 0.2 * U, 'ui_seal').setDepth(2.5).setScale(0.42);
+    this.tweens.add({ targets: seal, angle: { from: -3, to: 3 }, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const hint = this.add.text(cx - 3.4 * U, cy - 0.4 * U, '', { fontFamily: 'Georgia, serif', fontSize: '22px', color: '#ffe9b0', stroke: '#1a0c04', strokeThickness: 5, align: 'center' }).setOrigin(0.5).setDepth(8);
+    this.goal = { img, gh, rays, em, seal, hint, cx, cy, locked: true };
+    img.setTint(0x6a6470).setAlpha(0.8); gh.setVisible(false); rays.forEach(r => r.setVisible(false)); em.stop();
+  }
+  remaining() {
+    const c = this.counts, t = this.totals;
+    return { jade: t.jade_bead - c.jade_bead, pyrite: t.pyrite_sphere - c.pyrite_sphere, sun: t.sun_fragment - c.sun_fragment };
+  }
+  updateGoalLock() {
+    const G = this.goal; if (!G) return;
+    const r = this.remaining(), c = this.counts, t = this.totals;
+    if (G.locked && r.jade <= 0 && r.pyrite <= 0 && r.sun <= 0) return this.unlockGoal();
+    if (!G.locked) return;
+    const extra = [r.pyrite > 0 ? r.pyrite + ' pyrite' : '', r.sun > 0 ? r.sun + ' sun fragment' + (r.sun > 1 ? 's' : '') : ''].filter(Boolean).join(' + ');
+    G.hint.setText('SEALED\nCollect all jade ' + c.jade_bead + '/' + t.jade_bead + (extra ? '\n+ ' + extra : ''));
+  }
+  unlockGoal() {
+    const G = this.goal; G.locked = false;
+    G.img.clearTint(); G.img.setAlpha(1); G.gh.setVisible(true); G.rays.forEach(r => r.setVisible(true)); G.em.start();
+    this.tweens.killTweensOf(G.seal);
+    this.tweens.add({ targets: G.seal, scale: 1.6, alpha: 0, angle: 40, duration: 500, ease: 'Cubic.out', onComplete: () => G.seal.destroy() });
+    this.burst(this.pSpark, G.cx, G.cy, 50); this.burst(this.pJade, G.cx, G.cy, 30);
+    for (let i = 0; i < 2; i++) { const ring = this.add.circle(G.cx, G.cy, 30).setStrokeStyle(6, i ? 0x9fffd0 : 0xffe080).setDepth(9).setBlendMode(Phaser.BlendModes.ADD); this.tweens.add({ targets: ring, scale: 6, alpha: 0, delay: i * 140, duration: 700, ease: 'Cubic.out', onComplete: () => ring.destroy() }); }
+    G.hint.setText('THE SUN GATE IS OPEN!').setColor('#ffe080');
+    this.tweens.add({ targets: G.hint, scale: 1.2, duration: 300, yoyo: true, repeat: 2 });
+    this.cameras.main.flash(400, 255, 230, 160); this.cameras.main.shake(250, 0.006);
+    this.sfx('goal_unlock', 0.9); this.toast('All treasures found - the Sun Gate is open!');
+    this.updateHud();
   }
   buildHints() {
     for (const h of LV.tutorialHints || []) {
@@ -369,7 +485,7 @@ class Game extends Phaser.Scene {
   }
   hurt(from) {
     if (this.time.now - (this.lastHurt || 0) < 800) return;
-    this.lastHurt = this.time.now; this.sfx('hit_hurt_01', 0.8);
+    this.lastHurt = this.time.now; this.sfx('hit', 0.8);
     const p = this.pbody.position, d = Math.sign(p.x - from.x) || 1;
     MB.setVelocity(this.pbody, { x: d * 9, y: -6 });
     this.cameras.main.shake(180, 0.006);
@@ -387,7 +503,7 @@ class Game extends Phaser.Scene {
     const halo = this.add.circle(body.position.x, body.position.y, 18, 0xff8a20, 0.35).setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
     this.groundBodiesDirty = true;
     const b = { body, img, halo, born: this.time.now }; body.bolt = b; this.bolts.push(b);
-    this.sfx('fire_01', 0.5);
+    this.sfx('fire', 0.45);
     this.burst(this.pSpark, body.position.x, body.position.y, 12);
   }
   killBolt(b) {
@@ -398,7 +514,7 @@ class Game extends Phaser.Scene {
   }
   killEnemy(en) {
     this.groundBodiesDirty = true;
-    if (!en.alive) return; en.alive = false; this.sfx('hit_01', 0.8);
+    if (!en.alive) return; en.alive = false; this.sfx('enemy_death', 0.8);
     this.matter.world.remove(en.body); this.dyn = this.dyn.filter(d => d.body !== en.body);
     const ex = en.img.x, ey = en.img.y; this.hitFlash(en.img, 90);
     this.burst(this.pPuff, ex, ey, 18); this.burst(this.pSpark, ex, ey, 16); this.addScore(200, ex, ey);
@@ -419,7 +535,7 @@ class Game extends Phaser.Scene {
           const n = pr.collision.normal; let up = n.y < 0 ? { x: n.x, y: n.y } : { x: -n.x, y: -n.y };  // normal pointing up, out of the ground
           const ny = -up.y;
           if (ny > 0.45) { this.lastGround = this.time.now; this.groundNormal = up; }
-          if (start && this.prevSpeed > 6 && ny > 0.45 && this.time.now - (this.lastLand || 0) > 300) { this.lastLand = this.time.now; if (this.prevSpeed > 9) this.sfx('land_stone_01', 0.35); const q = this.pbody.position; this.burst(this.pDust, q.x, q.y + R * 0.9, Math.min(18, Math.round(this.prevSpeed))); this.landSquash = 1; }
+          if (start && this.prevSpeed > 6 && ny > 0.45 && this.time.now - (this.lastLand || 0) > 300) { this.lastLand = this.time.now; this.sfx(this.prevSpeed > 11 ? 'land_stone' : 'land', Math.min(0.8, 0.2 + this.prevSpeed / 25)); const q = this.pbody.position; this.burst(this.pDust, q.x, q.y + R * 0.9, Math.min(18, Math.round(this.prevSpeed))); this.landSquash = 1; }
         }
         if (!start) continue;
         this.playerHit(b);
@@ -434,7 +550,7 @@ class Game extends Phaser.Scene {
       case 'pickup': {
         const r = b.ref; if (r.taken) return; r.taken = true;
         this.counts[r.p.type] = (this.counts[r.p.type] || 0) + 1;
-        this.sfx(r.p.type === 'jade_bead' ? 'collect_beads' : 'collect_pyrite_bell', 0.6);
+        if (r.p.type === 'jade_bead') { this.jadeChain = this.time.now - (this.lastJadeT || -1e9) < 1600 ? Math.min((this.jadeChain || 0) + 1, 12) : 0; this.lastJadeT = this.time.now; this.sfx('jade', 0.55, Math.pow(2, [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21][this.jadeChain] / 12)); } else this.sfx(r.p.type === 'pyrite_sphere' ? 'pyrite' : 'sun_fragment', 0.75);
         this.matter.world.remove(b);
         this.tweens.killTweensOf(r.img); for (const e of r.img.extras || []) { this.tweens.killTweensOf(e); e.destroy(); }
         this.tweens.add({ targets: r.img, y: r.img.y - 40, alpha: 0, scale: r.img.scale * 1.5, duration: 300, onComplete: () => r.img.destroy() });
@@ -446,7 +562,7 @@ class Game extends Phaser.Scene {
         if (r.p.secret) this.toast('Secret sun fragment!');
         this.updateHud(); break;
       }
-      case 'spike': this.sfx('hit_hurt_01', 0.8); this.cameras.main.shake(150, 0.008); this.respawn(); break;
+      case 'spike': this.sfx('hit', 0.8); this.cameras.main.shake(150, 0.008); this.respawn(); break;
       case 'crumble': this.triggerCrumble(b.trap); break;
       case 'enemy': {
         const en = b.enemy; if (!en.alive) return;
@@ -460,13 +576,13 @@ class Game extends Phaser.Scene {
         const r = b.ref; if (this.time.now - r.last < 800) return; r.last = this.time.now;
         const v = this.pbody.velocity, d = Math.sign(v.x) || this.facing;
         MB.setVelocity(this.pbody, { x: d * Math.max(Math.abs(v.x) * 1.6, 15), y: v.y });
-        this.sfx('collect_pyrite_bell', 0.5); this.toast('Speed gate!');
+        this.sfx('fw_launch', 0.5); this.toast('Speed gate!');
         this.tweens.add({ targets: r.img, scale: r.img.scale * 1.15, duration: 120, yoyo: true });
         break;
       }
       case 'checkpoint': {
         const r = b.ref; if (r.active) return; r.active = true; r.img.clearTint();
-        this.checkpoint = { x: r.img.x, y: r.img.y - 1.2 * U }; this.toast('Checkpoint'); this.burst(this.pSpark, r.img.x, r.img.y - 0.8 * U, 30); this.fxGlow(r.img, 0xffc050, 3); this.sfx('collect_pyrite_bell', 0.5); break;
+        this.checkpoint = { x: r.img.x, y: r.img.y - 1.2 * U }; this.toast('Checkpoint'); this.burst(this.pSpark, r.img.x, r.img.y - 0.8 * U, 30); this.fxGlow(r.img, 0xffc050, 3); this.sfx('star', 0.6); break;
       }
       case 'cracked': {
         const sp = Math.max(this.prevSpeed, Math.hypot(this.pbody.velocity.x, this.pbody.velocity.y)) * 60 / U;
@@ -476,14 +592,14 @@ class Game extends Phaser.Scene {
           this.tweens.add({ targets: sc.img, alpha: 0, duration: 300, onComplete: () => sc.img.destroy() });
           for (let i = 0; i < 14; i++) { const c = this.add.rectangle(sc.img.x + U / 2, sc.img.y + Math.random() * sc.img.displayHeight, 10, 10, 0x8a7a68).setDepth(6); this.tweens.add({ targets: c, x: c.x - 80 - Math.random() * 120, y: c.y + 60 + Math.random() * 80, angle: 360, alpha: 0, duration: 700, onComplete: () => c.destroy() }); }
           this.secretsFound++; this.toast('Secret passage!'); this.addScore(2000, sc.img.x, sc.img.y, 'secret'); this.burst(this.pPuff, sc.img.x + U / 2, sc.img.y + sc.img.displayHeight / 2, 24); this.updateHud();
-        } else if (this.time.now - (this.lastWallBonk || 0) > 600) { this.lastWallBonk = this.time.now; this.sfx('hit_stone_01', 0.4); this.toast('The wall is cracked... hit it faster (' + sp.toFixed(1) + '/' + sc.s.minSpeed + ')'); }
+        } else if (this.time.now - (this.lastWallBonk || 0) > 600) { this.lastWallBonk = this.time.now; this.sfx('stone_bonk', 0.4); this.toast('The wall is cracked... hit it faster (' + sp.toFixed(1) + '/' + sc.s.minSpeed + ')'); }
         break;
       }
       case 'xolotl': {
         const r = b.ref; if (r.found) return; r.found = true; this.secretsFound++;
-        this.toast('Xólotl found! Lore card unlocked'); this.addScore(2000, r.img.x, r.img.y, 'secret'); this.burst(this.pJade, r.img.x, r.img.y, 30); this.sfx('collect_pyrite_bell', 0.7); this.updateHud(); break;
+        this.toast('Xólotl found! Lore card unlocked'); this.addScore(2000, r.img.x, r.img.y, 'secret'); this.burst(this.pJade, r.img.x, r.img.y, 30); this.sfx('sun_fragment', 0.7); this.updateHud(); break;
       }
-      case 'goal': this.win(); break;
+      case 'goal': if (this.goal && this.goal.locked) { if (this.time.now - (this.lastSealBonk || 0) > 1200) { this.lastSealBonk = this.time.now; this.sfx('stone_bonk', 0.6); this.cameras.main.shake(120, 0.004); const r = this.remaining(); this.toast('Sealed! Still need ' + [r.jade > 0 ? r.jade + ' jade' : '', r.pyrite > 0 ? r.pyrite + ' pyrite' : '', r.sun > 0 ? r.sun + ' sun' : ''].filter(Boolean).join(', ')); this.tweens.add({ targets: this.goal.seal, scale: 0.48, duration: 80, yoyo: true }); } } else this.win(); break;
     }
   }
 
@@ -491,28 +607,62 @@ class Game extends Phaser.Scene {
   makeHud() {
     const st = { fontFamily: 'Georgia, serif', fontSize: '24px', color: '#ffe9b0', stroke: '#1a0c04', strokeThickness: 5 };
     this.makeFancyHud();
-    this.add.text(VW - 20, 100 - 2, 'A/D roll  Space jump  J/click fire  R restart  F effects', Object.assign({}, st, { fontSize: '16px' })).setOrigin(1, 0).setScrollFactor(0).setDepth(100).setAlpha(0.8);
+    this.add.text(VW / 2, VH - 14, 'A/D roll  Space jump  J/click fire  R restart  F effects  M mute', Object.assign({}, st, { fontSize: '16px' })).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100).setAlpha(0.8);
     this.toastText = this.add.text(VW / 2, 90, '', Object.assign({}, st, { fontSize: '28px' })).setOrigin(0.5).setScrollFactor(0).setDepth(100).setAlpha(0);
-    this.speedText = this.add.text(22, 78, '', Object.assign({}, st, { fontSize: '18px' })).setScrollFactor(0).setDepth(100);
+    this.speedText = this.add.text(22, 104, '', Object.assign({}, st, { fontSize: '16px' })).setScrollFactor(0).setDepth(100).setAlpha(0.7);
+    this.leftText = this.add.text(22, 78, '', Object.assign({}, st, { fontSize: '20px' })).setScrollFactor(0).setDepth(100);
     this.updateHud();
   }
   updateHud() {
     const c = this.counts, t = this.totals;
     this.refreshHudCounts(!!this.hudReady); this.hudReady = true;
+    if (this.leftText) { const r = this.remaining(); this.leftText.setText(r.jade + r.pyrite + r.sun > 0 ? 'Left: ' + [r.jade + ' jade', r.pyrite + ' pyrite', r.sun + ' sun'].join('  ·  ') : 'All found! Go to the Sun Gate ▶').setColor(r.jade + r.pyrite + r.sun > 0 ? '#ffe9b0' : '#ffe080'); }
+    this.updateGoalLock();
   }
   toast(msg) {
     this.toastText.setText(msg).setAlpha(1); this.tweens.killTweensOf(this.toastText);
     this.tweens.add({ targets: this.toastText, alpha: 0, delay: 1500, duration: 500 });
   }
   win() {
-    if (this.done) return; this.done = true; this.sfx('collect_pyrite_bell', 0.9);
-    const st = { fontFamily: 'Georgia, serif', fontSize: '64px', color: '#ffd76a', stroke: '#2a1206', strokeThickness: 8 };
-    this.add.rectangle(0, 0, VW, VH, 0x000000, 0.45).setOrigin(0).setScrollFactor(0).setDepth(110);
-    this.add.text(VW / 2, VH / 2 - 40, 'Level complete', st).setOrigin(0.5).setScrollFactor(0).setDepth(111);
-    const c = this.counts, t = this.totals, secs = ((this.time.now - (this.startTime || 0)) / 1000).toFixed(1);
-    this.add.text(VW / 2, VH / 2 + 40, `Jade ${c.jade_bead}/${t.jade_bead}  Pyrite ${c.pyrite_sphere}/${t.pyrite_sphere}  Sun fragments ${c.sun_fragment}/${t.sun_fragment}  Secrets ${this.secretsFound}/${(LV.secrets || []).length}\nScore ${this.score.toLocaleString('en-GB')}   Time ${secs}s  -  press R to play again`,
-      Object.assign({}, st, { fontSize: '24px', strokeThickness: 4, align: 'center' })).setOrigin(0.5).setScrollFactor(0).setDepth(111);
-    this.input.keyboard.once('keydown-R', () => { if (this.music) this.music.stop(); this.scene.restart(); });
+    if (this.done) return; this.done = true; setMenu(true);
+    const secs = (this.time.now - (this.startTime || 0)) / 1000;
+    this.stats = { level: this.levelIndex, time: secs, jade: this.counts.jade_bead, jadeTotal: this.totals.jade_bead, score: this.score, secrets: this.secretsFound, secretsTotal: (LV.secrets || []).length };
+    this.stats.stars = 1 + (secs <= this.L.parTime ? 1 : 0) + (this.secretsFound >= this.stats.secretsTotal ? 1 : 0);
+    MB.setVelocity(this.pbody, { x: 0, y: 0 }); MB.setAngularVelocity(this.pbody, 0);
+    this.fireworks(this.goal.cx, this.goal.cy);
+    this.time.delayedCall(2300, () => this.scene.launch('complete', this.stats));
+  }
+  fireworks(x, y) {
+    const cam = this.cameras.main, G = this.goal, PAL = [0xffd060, 0x5fe0a8, 0x40d0e0, 0xff6a4a, 0xff8ac0, 0xfff4d8, 0xffa030];
+    cam.stopFollow(); cam.pan(x, y - 2.5 * U, 700, 'Sine.easeInOut');
+    cam.flash(500, 255, 240, 200); cam.shake(500, 0.014); this.sfx('title_boom', 0.8);
+    // the altar bursts: glow pop, shock rings, stone shards
+    this.tweens.add({ targets: G.img, scale: G.img.scale * 1.35, alpha: 0, duration: 450, ease: 'Cubic.out' });
+    for (let i = 0; i < 3; i++) { const ring = this.add.circle(x, y, 40).setStrokeStyle(10 - i * 3, PAL[i]).setDepth(30).setBlendMode(Phaser.BlendModes.ADD); this.tweens.add({ targets: ring, scale: 9 + i * 3, alpha: 0, delay: i * 120, duration: 900, ease: 'Cubic.out', onComplete: () => ring.destroy() }); }
+    const shards = this.add.particles(x, y, 'fx_spark', { speed: { min: 250, max: 650 }, angle: { min: 0, max: 360 }, gravityY: 600, lifespan: 1400, scale: { start: 0.9, end: 0 }, rotate: { min: 0, max: 360 }, tint: PAL, blendMode: 'ADD', emitting: false }).setDepth(30);
+    shards.explode(LOWFX ? 40 : 110);
+    this.burst(this.pSpark, x, y, 60); this.burst(this.pJade, x, y, 40);
+    // rockets with trails, bursting into coloured stars, then crackle sparkle
+    const n = LOWFX ? 6 : 12;
+    for (let i = 0; i < n; i++) this.time.delayedCall(120 + i * 170 + Math.random() * 120, () => {
+      const col = PAL[i % PAL.length], wv = cam.worldView, tx = Phaser.Math.Clamp(x + Phaser.Math.Between(-520, 520), wv.x + 120, wv.right - 120), ty = Phaser.Math.Between(wv.y + 110, wv.y + 380);
+      const rk = this.add.image(x + Phaser.Math.Between(-40, 40), y, 'fx_spark').setTint(col).setBlendMode(Phaser.BlendModes.ADD).setScale(0.6).setDepth(31);
+      const trail = this.add.particles(0, 0, 'fx_spark', { follow: rk, lifespan: 500, speed: { min: 5, max: 30 }, scale: { start: 0.45, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [col, 0xfff4d8], blendMode: 'ADD', frequency: LOWFX ? 40 : 14 }).setDepth(30);
+      this.sfx('fw_launch', 0.35, 0.9 + Math.random() * 0.3);
+      this.tweens.add({ targets: rk, x: tx, y: ty, duration: 450 + Math.random() * 200, ease: 'Quad.out', onComplete: () => {
+        rk.destroy(); trail.stop(); this.time.delayedCall(600, () => trail.destroy());
+        this.sfx('fw_pop', 0.6, 0.85 + Math.random() * 0.3); cam.shake(160, 0.005);
+        const c2 = PAL[(i + 3) % PAL.length];
+        const bl = this.add.particles(tx, ty, 'fx_spark', { speed: { min: 120, max: 480 }, angle: { min: 0, max: 360 }, gravityY: 160, lifespan: { min: 900, max: 1600 }, scale: { start: 0.95, end: 0 }, alpha: { start: 1, end: 0 }, tint: [col, c2, 0xffffff], blendMode: 'ADD', emitting: false }).setDepth(31);
+        bl.explode(LOWFX ? 40 : 130);
+        const fl = this.add.image(tx, ty, 'fx_soft').setTint(col).setBlendMode(Phaser.BlendModes.ADD).setScale(3).setDepth(30); this.tweens.add({ targets: fl, scale: 6, alpha: 0, duration: 450, onComplete: () => fl.destroy() });
+        this.time.delayedCall(350, () => {
+          this.sfx('fw_crackle', 0.4);
+          const sp = this.add.particles(tx, ty, 'fx_spark', { speed: { min: 20, max: 260 }, angle: { min: 0, max: 360 }, gravityY: 220, lifespan: { min: 300, max: 1000 }, scale: { start: 0.4, end: 0 }, alpha: { start: 1, end: 0, ease: 'Stepped' }, tint: 0xfff4d8, blendMode: 'ADD', emitting: false }).setDepth(31);
+          sp.explode(LOWFX ? 15 : 45); this.time.delayedCall(1800, () => { sp.destroy(); bl.destroy(); });
+        });
+      } });
+    });
   }
 
   debugState() {
@@ -533,13 +683,14 @@ class Game extends Phaser.Scene {
     }
     const grounded = time - this.lastGround < 130;     // coyote time
     let dir = (right ? 1 : 0) - (left ? 1 : 0);
+    if (!dir && TILT.on) dir = Phaser.Math.Clamp(TILT.dir, -1, 1);   // analog tilt; keys/buttons override
     if (this.done) dir = 0;
-    if (dir) this.facing = dir;
+    if (Math.abs(dir) > 0.15) this.facing = Math.sign(dir);
     // roll: spin the marble (torque) and push a little; less push in the air
     const maxSpin = 0.42;
     if (dir) {
-      const av = p.angularVelocity + dir * (grounded ? 0.018 : 0.006);
-      MB.setAngularVelocity(p, Phaser.Math.Clamp(av, -maxSpin, maxSpin));
+      const av = p.angularVelocity + dir * (grounded ? 0.018 : 0.006), cap = maxSpin * Math.max(0.35, Math.abs(dir));
+      MB.setAngularVelocity(p, Math.abs(av) > cap && Math.abs(av) > Math.abs(p.angularVelocity) ? Math.sign(av) * Math.max(cap, Math.abs(p.angularVelocity)) : Phaser.Math.Clamp(av, -maxSpin, maxSpin));
       const f = (grounded ? 0.00055 : 0.00018) * p.mass;
       const gn = grounded && this.groundNormal ? this.groundNormal : { x: 0, y: -1 };
       MB.applyForce(p, p.position, { x: dir * f * -gn.y, y: dir * f * gn.x });   // along the surface tangent
@@ -553,7 +704,7 @@ class Game extends Phaser.Scene {
       const n = this.groundNormal || { x: 0, y: -1 };
       const jv = 10.2;
       MB.setVelocity(p, { x: p.velocity.x + n.x * jv * 0.35, y: Math.min(p.velocity.y, 0) - jv * (0.65 + 0.35 * -n.y) });
-      this.sfx('jump_01', 0.5);
+      this.sfx('jump', 0.5, 0.95 + Math.random() * 0.1);
     }
     // speed cap (prevents tunnelling)
     const sp = Math.hypot(p.velocity.x, p.velocity.y);
@@ -629,19 +780,11 @@ class Game extends Phaser.Scene {
     }
     this.bolts = this.bolts.filter(b => !b.dead);
 
+    this.updateRollSound(sp, grounded);
     this.updateParallax(); this.updateAmbient(time);
     this.speedText.setText('Speed ' + (sp * 60 / U).toFixed(1) + ' u/s');
   }
 }
 
 Object.assign(Game.prototype, window.TEO_FXM);
-new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  width: VW, height: VH,
-  backgroundColor: '#120c1c',
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  physics: { default: 'matter', matter: { gravity: { y: 1 }, debug: false } },
-  input: { mouse: { preventDefaultDown: true } },
-  scene: [Game],
-});
+window.TEO_GAME = Game;

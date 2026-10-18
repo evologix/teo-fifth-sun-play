@@ -178,6 +178,78 @@
    "type": "sun_fragment",
    "x": 78,
    "h": 3.2
+  },
+  {
+   "type": "jade_bead",
+   "x": 25,
+   "h": 2.0,
+   "tag": "arc"
+  },
+  {
+   "type": "jade_bead",
+   "x": 26,
+   "h": 2.7,
+   "tag": "arc"
+  },
+  {
+   "type": "jade_bead",
+   "x": 27,
+   "h": 2.0,
+   "tag": "arc"
+  },
+  {
+   "type": "jade_bead",
+   "x": 60,
+   "h": 2.0,
+   "tag": "cluster"
+  },
+  {
+   "type": "jade_bead",
+   "x": 60.8,
+   "h": 2.7,
+   "tag": "cluster"
+  },
+  {
+   "type": "jade_bead",
+   "x": 61.6,
+   "h": 2.0,
+   "tag": "cluster"
+  },
+  {
+   "type": "jade_bead",
+   "x": 32.6,
+   "y": 11.6,
+   "tag": "lip"
+  },
+  {
+   "type": "jade_bead",
+   "x": 71.5,
+   "y": 11.2,
+   "tag": "lip"
+  },
+  {
+   "type": "jade_bead",
+   "x": 85,
+   "y": 9.5,
+   "tag": "lip"
+  },
+  {
+   "type": "jade_bead",
+   "x": 122.5,
+   "y": 9.3,
+   "tag": "lip"
+  },
+  {
+   "type": "jade_bead",
+   "x": 89,
+   "h": 3.2,
+   "tag": "hard"
+  },
+  {
+   "type": "jade_bead",
+   "x": 129.5,
+   "h": 3.25,
+   "tag": "hard"
   }
  ],
  "enemies": [
@@ -264,7 +336,7 @@
   {
    "x": 4,
    "h": 3,
-   "text": "A / D or ◀ ▶ to roll"
+   "text": "A / D or \u25c0 \u25b6 to roll"
   },
   {
    "x": 27,
@@ -274,7 +346,7 @@
   {
    "x": 46,
    "h": 2.6,
-   "text": "Build speed for the 30° ramp"
+   "text": "Build speed for the 30\u00b0 ramp"
   },
   {
    "x": 79,
