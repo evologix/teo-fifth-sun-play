@@ -29,22 +29,39 @@ function setupPad() {
 window.TEO_PAD = PAD;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupPad); else setupPad();
 
-// ---------- tilt-to-roll (deviceorientation) ----------
-// TILT.dir is an analog -1..1 value; keys/buttons override it while pressed. iOS 13+ needs requestPermission() from a tap.
-const TILT = { on: false, dir: 0, raw: 0, neutral: null, recal: true, granted: false, lastEvt: 0, DEAD: 3, FULL: 25, SMOOTH: 0.25 };
+// ---------- tilt-to-roll (deviceorientation + devicemotion) ----------
+// TILT.dir is an analog -1..1 value fed to the roll code every frame; keys/buttons override it while pressed.
+// iOS 13+: DeviceOrientationEvent/DeviceMotionEvent.requestPermission() must be called synchronously inside a native touchend/click.
+const TILT = { on: false, dir: 0, raw: 0, neutral: null, recal: true, granted: false, state: 'off', lastEvt: 0, src: '-',
+  beta: null, gamma: null, acc: null, gflip: null, DEAD: 3, FULL: 25, SMOOTH: 0.25 };
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+function isLandscape() {
+  let m = null; try { m = window.matchMedia('(orientation: landscape)').matches; } catch (_) { }
+  const w = window.innerWidth, h = window.innerHeight;
+  if (w && h && w !== h) return w > h;     // actual viewport is the ground truth (iOS media/angle can lag)
+  return m === null ? false : m;
+}
 function tiltScreenAngle() {
-  let a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (typeof window.orientation === 'number' ? window.orientation : 0);
-  return ((a % 360) + 360) % 360;
+  let a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle
+    : (typeof window.orientation === 'number' ? window.orientation : null);
+  const land = isLandscape();
+  if (a === null) a = land ? 90 : 0;
+  a = ((a % 360) + 360) % 360;
+  if (land && (a === 0 || a === 180)) a = 90;           // stale angle while the viewport is already landscape
+  if (!land && (a === 90 || a === 270)) a = 0;
+  return a;
 }
-function tiltRoll(e) {   // left/right roll in degrees, positive = tip the right-hand side of the screen down
-  const a = tiltScreenAngle(), b = e.beta || 0, g = e.gamma || 0;
-  if (a === 90) return b; if (a === 270) return -b; if (a === 180) return -g; return g;
+// roll in degrees, positive = right-hand side of the screen tipped down
+function rollFromOrientation(a, b, g) { if (a === 90) return b; if (a === 270) return -b; if (a === 180) return -g; return g; }
+function rollFromGravity(a, gv) {   // gv in W3C/Android sign convention (at rest the vector points up, away from the earth)
+  const c = (v) => Math.max(-1, Math.min(1, v / 9.81)), D = 180 / Math.PI;
+  if (a === 90) return Math.asin(c(gv.y)) * D; if (a === 270) return Math.asin(c(-gv.y)) * D;
+  if (a === 180) return Math.asin(c(gv.x)) * D; return Math.asin(c(-gv.x)) * D;
 }
-function onTiltEvent(e) {
-  if (e.beta == null && e.gamma == null) return;
-  TILT.granted = true; TILT.lastEvt = performance.now();
-  const r = tiltRoll(e); TILT.raw = r;
-  if (!TILT.on) return;
+function tiltFeed(r, src) {
+  TILT.raw = r; TILT.src = src; TILT.lastEvt = performance.now(); TILT.granted = true;
+  if (TILT.state === 'waiting') { TILT.state = 'on'; tiltUI(); }
+  if (!TILT.on) { TILT.dir = 0; return; }
   if (TILT.recal || TILT.neutral === null) { TILT.neutral = r; TILT.recal = false; }
   let d = r - TILT.neutral; d = ((d + 180) % 360 + 360) % 360 - 180;
   const m = Math.abs(d), t = m <= TILT.DEAD ? 0 : Math.min(1, (m - TILT.DEAD) / (TILT.FULL - TILT.DEAD));
@@ -52,49 +69,116 @@ function onTiltEvent(e) {
   TILT.dir += (target - TILT.dir) * TILT.SMOOTH;
   if (Math.abs(TILT.dir) < 0.01 && target === 0) TILT.dir = 0;
 }
+function onOrientEvt(e) {
+  if (e.beta == null && e.gamma == null) return;
+  TILT.beta = e.beta || 0; TILT.gamma = e.gamma || 0; TILT.lastOri = performance.now();
+  // the gravity path is preferred when it is live; orientation drives roll only when no motion data arrives
+  if (!TILT.lastAcc || performance.now() - TILT.lastAcc > 400) tiltFeed(rollFromOrientation(tiltScreenAngle(), TILT.beta, TILT.gamma), 'ori');
+}
+function onMotionEvt(e) {
+  const g = e.accelerationIncludingGravity; if (!g || g.x == null || g.y == null) return;
+  let gv = { x: g.x, y: g.y, z: g.z || 0 };
+  // sign convention: iOS reports the opposite sign to the W3C/Android convention. Default by platform, then
+  // self-check against beta when orientation data is live (upright device: beta ~ +90 and spec y ~ +9.8).
+  if (TILT.gflip === null || TILT.gflipAuto) {
+    if (TILT.lastOri && performance.now() - TILT.lastOri < 400 && Math.abs(Math.sin(TILT.beta * Math.PI / 180)) > 0.3 && Math.abs(g.y) > 2.5) {
+      TILT.gflip = Math.sign(g.y) !== Math.sign(Math.sin(TILT.beta * Math.PI / 180)); TILT.gflipAuto = false;
+    } else if (TILT.gflip === null) { TILT.gflip = IS_IOS; TILT.gflipAuto = true; }
+  }
+  if (TILT.gflip) gv = { x: -gv.x, y: -gv.y, z: -gv.z };
+  TILT.acc = gv; TILT.lastAcc = performance.now();
+  tiltFeed(rollFromGravity(tiltScreenAngle(), gv), 'acc');
+}
 function tiltUI() {
   const b = document.getElementById('bTilt'), c = document.getElementById('bCentre'), pr = document.getElementById('tiltPrompt');
   if (!b) return;
-  b.classList.toggle('on', TILT.on); b.textContent = TILT.on ? 'TILT ON' : 'TILT';
+  const s = TILT.state;
+  b.classList.toggle('on', s === 'on' || s === 'waiting'); b.classList.toggle('bad', s === 'denied' || s === 'error' || s === 'nodata');
+  b.textContent = s === 'on' ? 'TILT ON' : s === 'waiting' ? 'TILT…' : s === 'asking' ? 'ALLOW?' : 'TILT';
   if (c) c.style.display = TILT.on ? 'flex' : 'none';
   document.body.classList.toggle('tilting', TILT.on);
-  if (pr) pr.style.display = (!TILT.on && localStorage.getItem('teoTilt') === '1') ? 'block' : 'none';
+  let msg = '';
+  if (s === 'denied') msg = 'Motion blocked - enable in Settings > Safari > Motion & Orientation Access, then reload';
+  else if (s === 'error') msg = 'Motion permission failed (' + (TILT.err || 'error') + ')' + (location.protocol !== 'https:' ? ' - needs HTTPS' : '') + '. Tap TILT to retry';
+  else if (s === 'nodata') msg = 'No motion data from this device' + (location.protocol !== 'https:' ? ' (needs HTTPS)' : '');
+  else if (!TILT.on && TILT.wanted) msg = 'Tap to enable tilt';
+  if (pr) { pr.textContent = msg; pr.style.display = msg ? 'block' : 'none'; }
 }
 function tiltSet(on) {
-  TILT.on = on; TILT.dir = 0; TILT.recal = true;
+  TILT.on = on; TILT.dir = 0; TILT.recal = true; TILT.neutral = null;
+  TILT.state = on ? (performance.now() - TILT.lastEvt < 500 ? 'on' : 'waiting') : 'off';
+  TILT.wanted = false;
   try { localStorage.setItem('teoTilt', on ? '1' : '0'); } catch (_) { }
   tiltUI();
+  if (on) { clearTimeout(TILT.wt); TILT.wt = setTimeout(() => { if (TILT.on && TILT.state === 'waiting') { TILT.state = 'nodata'; tiltUI(); } }, 2500); }
 }
-function tiltEnable() {   // must run synchronously inside the tap handler for iOS
-  const D = window.DeviceOrientationEvent;
-  if (D && typeof D.requestPermission === 'function') {
-    D.requestPermission().then(s => { if (s !== 'denied') tiltSet(true); else { tiltSet(false); alert('Motion access was denied. To allow it, close and reopen this page (or Safari > Settings > Motion & Orientation Access).'); } })
-      .catch(() => { tiltSet(false); });
-  } else tiltSet(true);
+function tiltEnable() {   // runs synchronously inside a native touchend/click handler (iOS user activation)
+  const DO = window.DeviceOrientationEvent, DM = window.DeviceMotionEvent;
+  const needO = DO && typeof DO.requestPermission === 'function', needM = DM && typeof DM.requestPermission === 'function';
+  if (!needO && !needM) { tiltSet(true); return; }
+  const ps = [];
+  try { if (needO) ps.push(DO.requestPermission()); } catch (e) { ps.push(Promise.reject(e)); }
+  try { if (needM) ps.push(DM.requestPermission()); } catch (e) { ps.push(Promise.reject(e)); }
+  TILT.state = 'asking'; tiltUI();
+  Promise.allSettled(ps).then(rs => {
+    const vals = rs.map(r => r.status === 'fulfilled' ? r.value : 'error');
+    if (vals.includes('granted') || (!IS_IOS && !vals.includes('denied'))) tiltSet(true);   // non-iOS browsers that expose requestPermission but reject it still deliver events
+    else { TILT.on = false; TILT.state = vals.includes('denied') ? 'denied' : 'error';
+      const rej = rs.find(r => r.status === 'rejected'); TILT.err = rej ? String((rej.reason && rej.reason.name) || rej.reason) : ''; tiltUI(); }
+  });
+}
+// orientation: matchMedia + resize + orientationchange + screen.orientation, re-checked late (iOS reports sizes late)
+function checkOrientation() {
+  const land = isLandscape(), touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  document.body.classList.toggle('portrait', !land && touch);
+  const a = tiltScreenAngle();
+  if (a !== TILT.angle) { TILT.angle = a; TILT.recal = true; TILT.dir = 0; }
+  const g = window.TEO_PHASER; if (g && g.scale) { try { g.scale.refresh(); } catch (_) { } }
+}
+function onOrientChange() { checkOrientation(); for (const t of [100, 300, 600, 1000]) setTimeout(checkOrientation, t); }
+function tiltDebug() {
+  if (!/[?&]tiltdebug=1/.test(location.search)) return;
+  const el = document.createElement('div'); el.id = 'tiltDbg';
+  el.style.cssText = 'position:fixed;left:4px;top:4px;z-index:60;background:rgba(0,0,0,.7);color:#9f9;font:11px/1.3 monospace;padding:4px 6px;pointer-events:none;white-space:pre';
+  document.body.appendChild(el);
+  const f = (v) => v == null ? '-' : (+v).toFixed(1);
+  setInterval(() => { const A = TILT.acc;
+    el.textContent = 'tilt ' + TILT.state + ' on=' + TILT.on + ' src=' + TILT.src + ' ios=' + IS_IOS + ' gflip=' + TILT.gflip +
+      '\nbeta ' + f(TILT.beta) + ' gamma ' + f(TILT.gamma) + '\naccG ' + (A ? f(A.x) + ',' + f(A.y) + ',' + f(A.z) : '-') +
+      '\nangle ' + tiltScreenAngle() + ' (so ' + (screen.orientation ? screen.orientation.angle : '-') + ' wo ' + (window.orientation ?? '-') + ') land=' + isLandscape() + ' ' + innerWidth + 'x' + innerHeight +
+      '\nroll ' + f(TILT.raw) + ' neutral ' + f(TILT.neutral) + ' dir ' + (+TILT.dir).toFixed(2); }, 100);
 }
 function setupTilt() {
   const b = document.getElementById('bTilt'), c = document.getElementById('bCentre'), pr = document.getElementById('tiltPrompt');
-  window.addEventListener('deviceorientation', onTiltEvent);
+  window.addEventListener('deviceorientation', onOrientEvt);
+  window.addEventListener('devicemotion', onMotionEvt);
+  try { const mq = window.matchMedia('(orientation: landscape)'); mq.addEventListener ? mq.addEventListener('change', onOrientChange) : mq.addListener(onOrientChange); } catch (_) { }
+  window.addEventListener('resize', onOrientChange); window.addEventListener('orientationchange', onOrientChange);
+  if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', onOrientChange);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', onOrientChange);
+  checkOrientation(); tiltDebug();
   const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   if (!b || !(touch || 'DeviceOrientationEvent' in window)) return;
   b.style.display = 'flex';
-  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
-  b.addEventListener('click', (e) => { stop(e); if (TILT.on) tiltSet(false); else tiltEnable(); });
-  if (c) c.addEventListener('click', (e) => { stop(e); TILT.recal = true; TILT.dir = 0; flash(c); });
-  if (pr) pr.addEventListener('click', (e) => { stop(e); tiltEnable(); });
-  for (const el of [b, c, pr]) if (el) for (const t of ['pointerdown', 'touchstart', 'mousedown', 'dblclick']) el.addEventListener(t, (e) => e.stopPropagation(), { passive: true });
+  // native tap: touchend (the iOS user-activation event) and click, de-duplicated
+  let lastTap = 0;
+  const tap = (el, fn) => {
+    const h = (e) => { e.preventDefault(); e.stopPropagation(); const n = Date.now(); if (n - lastTap < 400) return; lastTap = n; fn(); };
+    el.addEventListener('touchend', h, { passive: false }); el.addEventListener('click', h);
+    for (const t of ['pointerdown', 'touchstart', 'mousedown', 'dblclick']) el.addEventListener(t, (e) => e.stopPropagation(), { passive: true });
+  };
+  tap(b, () => { if (TILT.on) tiltSet(false); else tiltEnable(); });
+  if (c) tap(c, () => { TILT.recal = true; TILT.dir = 0; flash(c); });
+  if (pr) tap(pr, () => tiltEnable());
   function flash(el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 250); }
-  // persisted choice: enable directly where no permission is needed; iOS shows a tap prompt instead
+  // persisted choice: enable directly where no permission is needed; iOS needs a fresh tap each page load
   let saved = null; try { saved = localStorage.getItem('teoTilt'); } catch (_) { }
-  const needsPerm = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
-  if (saved === '1') { if (!needsPerm) tiltSet(true); else DeviceOrientationEvent.requestPermission().then(r => { if (r !== 'denied') tiltSet(true); }).catch(() => { }); }
+  const needsPerm = IS_IOS && ((window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') || (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function'));
+  if (saved === '1') { if (!needsPerm) tiltSet(true); else TILT.wanted = true; }
   tiltUI();
-  // try to lock landscape (works in fullscreen / installed PWAs on some browsers; iOS ignores it)
   try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => { }); } catch (_) { }
-  const reorient = () => { TILT.recal = true; };
-  if (screen.orientation) screen.orientation.addEventListener('change', reorient); window.addEventListener('orientationchange', reorient);
 }
-window.TEO_TILT = TILT; window.TEO_TILT_SET = tiltSet;
+window.TEO_TILT = TILT; window.TEO_TILT_SET = tiltSet; window.TEO_TILT_ENABLE = tiltEnable; window.TEO_CHECK_ORIENT = checkOrientation;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupTilt); else setupTilt();
 
 const TEX = {
