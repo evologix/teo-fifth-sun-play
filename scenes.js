@@ -62,6 +62,7 @@ class Title extends Phaser.Scene {
     this.load.on('progress', (p) => bar.width = 400 * p);
   }
   create() {
+    this.leaving = false;   // Phaser reuses the scene instance across start(): reset per-visit state
     setMenu(true); this.makeFxTextures();
     this.children.removeAll(true);
     const sky = this.add.image(VW / 2, VH / 2, 'L0_sky'); sky.setScale(Math.max(VW / sky.width, VH / sky.height));
@@ -156,6 +157,7 @@ Object.assign(Title.prototype, window.TEO_FXM);
 class Complete extends Phaser.Scene {
   constructor() { super('complete'); }
   create(st) {
+    this.leaving = false; this.btns = [];   // instance is reused on every start(): stale leaving=true blocked NEXT after L1
     this.st = st; setMenu(true); const L = LEVELS[st.level];
     const dim = this.add.rectangle(0, 0, VW, VH, 0x0a0614, 0).setOrigin(0); this.tweens.add({ targets: dim, fillAlpha: 0.6, duration: 500 });
     const CX = 400, CY = 350;
@@ -221,7 +223,7 @@ class Complete extends Phaser.Scene {
     b.setInteractive({ useHandCursor: true });
     b.on('pointerover', () => b.setScale(0.52)); b.on('pointerout', () => b.setScale(0.48));
     b.on('pointerdown', () => { this.sound.play('ui_click', { volume: 0.7 }); this.tweens.add({ targets: [b, t], scale: '*=0.9', duration: 70, yoyo: true, onComplete: cb }); });
-    (this.btns = this.btns || []).push({ label, b });
+    this.btns.push({ label, b });
   }
   replay() { if (this.leaving) return; this.leaving = true; this.scene.stop('game'); this.scene.start('game', { level: this.st.level }); }
   next() {
