@@ -1,0 +1,409 @@
+{
+ "id": "level03",
+ "name": "Mictlan Depths",
+ "terrain": "assets/terrain/level03_terrain.json",
+ "art": {
+  "layers": [
+   "mictlan_L0_sky",
+   "mictlan_L1_far",
+   "mictlan_L2_mid",
+   "mictlan_L3_near"
+  ],
+  "sprites": {
+   "jade_bead": "Assets/Art/Generated/Sprites2/marigold.png",
+   "pyrite_sphere": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "sun_fragment": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "speed_gate": "Assets/Art/Generated/Bonuses/speed_gate.png",
+   "checkpoint": "Assets/Art/Generated/Props/mask_b.png",
+   "sun_altar": "Assets/Art/Generated/Props/serpent_head.png",
+   "xolotl": "Assets/Art/Generated/Props/xolotl.png"
+  },
+  "collectSize": 0.75
+ },
+ "playerStart": {
+  "x": 3,
+  "h": 1.0
+ },
+ "pickups": [
+  {
+   "type": "jade_bead",
+   "x": 6,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 9,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 13,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 17,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 21,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 44,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 47,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 52,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 58,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 62,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 66,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 70,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 85,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 88,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 96,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 99,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 110,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 113,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 142,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 146,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 150,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 155,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 163,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 166,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 176,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 27.9,
+   "h": 1.8,
+   "hx": 26.1
+  },
+  {
+   "type": "jade_bead",
+   "x": 33.4,
+   "h": 1.8,
+   "hx": 31.5
+  },
+  {
+   "type": "jade_bead",
+   "x": 38.9,
+   "h": 1.8,
+   "hx": 37.1
+  },
+  {
+   "type": "jade_bead",
+   "x": 105.9,
+   "h": 1.8,
+   "hx": 104.1
+  },
+  {
+   "type": "jade_bead",
+   "x": 119.7,
+   "h": 1.8,
+   "hx": 118.1
+  },
+  {
+   "type": "jade_bead",
+   "x": 127.5,
+   "h": 1.8,
+   "hx": 125.9
+  },
+  {
+   "type": "jade_bead",
+   "x": 135.3,
+   "h": 1.8,
+   "hx": 133.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 170.8,
+   "h": 1.8,
+   "hx": 169.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 121.5,
+   "h": 1.6
+  },
+  {
+   "type": "jade_bead",
+   "x": 125.5,
+   "h": 1.6
+  },
+  {
+   "type": "jade_bead",
+   "x": 129.5,
+   "h": 1.6
+  },
+  {
+   "type": "jade_bead",
+   "x": 133.5,
+   "h": 1.6
+  },
+  {
+   "type": "sun_fragment",
+   "x": 74,
+   "h": 4.4
+  },
+  {
+   "type": "pyrite_sphere",
+   "x": 92,
+   "h": 1.8
+  }
+ ],
+ "enemies": [
+  {
+   "type": "skeleton_dog",
+   "x": 15,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 11,
+    "xMax": 20
+   }
+  },
+  {
+   "type": "bat",
+   "x": 36,
+   "h": 4.8,
+   "range": 3
+  },
+  {
+   "type": "sugar_skull",
+   "x": 55,
+   "h": 3
+  },
+  {
+   "type": "skeleton_dog",
+   "x": 64,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 61,
+    "xMax": 68
+   }
+  },
+  {
+   "type": "bat",
+   "x": 98,
+   "h": 4.5,
+   "range": 3
+  },
+  {
+   "type": "skeleton_dog",
+   "x": 110,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 108,
+    "xMax": 114
+   }
+  },
+  {
+   "type": "sugar_skull",
+   "x": 128,
+   "h": 4
+  },
+  {
+   "type": "bat",
+   "x": 150,
+   "h": 4.4,
+   "range": 4
+  },
+  {
+   "type": "sugar_skull",
+   "x": 165,
+   "h": 3.4
+  },
+  {
+   "type": "skeleton_dog",
+   "x": 175,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 173,
+    "xMax": 179
+   }
+  }
+ ],
+ "checkpoints": [
+  {
+   "id": "cp1",
+   "x": 43,
+   "h": 0
+  },
+  {
+   "id": "cp2",
+   "x": 68,
+   "h": 0
+  },
+  {
+   "id": "cp3",
+   "x": 95,
+   "h": 0
+  },
+  {
+   "id": "cp4",
+   "x": 115,
+   "h": 0
+  },
+  {
+   "id": "cp5",
+   "x": 140,
+   "h": 0
+  },
+  {
+   "id": "cp6",
+   "x": 162,
+   "h": 0
+  }
+ ],
+ "secrets": [
+  {
+   "type": "xolotl",
+   "x": 92,
+   "h": 1.2,
+   "loreCard": "xolotl_01"
+  }
+ ],
+ "goal": {
+  "type": "sun_altar",
+  "x": 180,
+  "h": 0
+ },
+ "decor": [],
+ "tutorialHints": [
+  {
+   "x": 4,
+   "h": 3,
+   "text": "The road to Mictlan"
+  },
+  {
+   "x": 25,
+   "h": 3.4,
+   "text": "Lava! Jump the pits"
+  },
+  {
+   "x": 46,
+   "h": 3.2,
+   "text": "Wait for the vents to cool"
+  },
+  {
+   "x": 117,
+   "h": 3.8,
+   "text": "Hop the pillars"
+  }
+ ],
+ "jets": [
+  {
+   "x": 49,
+   "period": 2.8,
+   "on": 1.1
+  },
+  {
+   "x": 87,
+   "period": 2.6,
+   "on": 1.0,
+   "offset": 1.0
+  },
+  {
+   "x": 101,
+   "period": 3,
+   "on": 1.2
+  },
+  {
+   "x": 145,
+   "period": 2.4,
+   "on": 1.0,
+   "offset": 0.6
+  },
+  {
+   "x": 158,
+   "period": 2.4,
+   "on": 1.0,
+   "offset": 1.8
+  }
+ ],
+ "loops": [
+  {
+   "x": 75,
+   "r": 2.2,
+   "minSpeed": 7
+  }
+ ],
+ "fx": []
+}

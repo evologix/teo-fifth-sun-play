@@ -142,7 +142,7 @@ const FXM = {
   buildBraziers() {
     this.braziers = [];
     if (FXOFF.has('braz')) return;
-    const xs = [11, 31, 47.5, 66, 92, 112, 127.5];
+    const xs = LV.braziers || (this.L.world === 'temple' ? [11, 31, 47.5, 66, 92, 112, 127.5] : []);
     for (const ux of xs) {
       const x = ux * U, gy = this.groundY(x, -1e9); if (!isFinite(gy)) continue;
       const im = this.add.image(x, gy + 6, 'fx_brazier').setOrigin(0.5, 1).setDepth(1.5).setScale(0.62);
@@ -190,7 +190,7 @@ const FXM = {
       this.fgp.push({ im, bx, by });
     }
     // grade: vignette + key-light bloom (upper left)
-    if (!FXOFF.has('vig')) this.add.image(0, 0, 'fx_vig').setOrigin(0).setDisplaySize(VW, VH).setScrollFactor(0).setDepth(90);
+    if (!FXOFF.has('vig')) this.vig = this.add.image(0, 0, 'fx_vig').setOrigin(0).setDisplaySize(VW, VH).setScrollFactor(0).setDepth(90);
   },
   updateAmbient(time) {
     const cam = this.cameras.main;
@@ -222,7 +222,7 @@ const FXM = {
       const tx = this.add.text(x + 22, 41, '', st).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100);
       this.hudItems[key] = { ic, tx, shown: 0 };
     };
-    item('jade_bead', 'jade_bead', 40, 0); item('pyrite_sphere', 'sun_fragment', 160, 0xe8c060); item('sun_fragment', 'sun_fragment', 270, 0); item('secrets', 'xolotl', 380, 0);
+    item('jade_bead', artKey('jade_bead'), 40, 0); item('pyrite_sphere', 'sun_fragment', 160, 0xe8c060); item('sun_fragment', 'sun_fragment', 270, 0); item('secrets', 'xolotl', 380, 0);
     if (!LOWFX) { const s = this.hudItems.sun_fragment.ic; this.fxGlow(s, 0xffc040, 3); }
     panel(VW - 274, 12, 260, 58);
     this.add.text(VW - 258, 41, 'SCORE', Object.assign({}, st, { fontSize: '16px', color: '#d8a85a' })).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100);

@@ -1,0 +1,339 @@
+{
+ "id": "level02",
+ "name": "Jungle Roll",
+ "terrain": "assets/terrain/level02_terrain.json",
+ "art": {
+  "layers": [
+   "jungle_L0_sky",
+   "jungle_L1_far",
+   "jungle_L2_mid",
+   "jungle_L3_near"
+  ],
+  "sprites": {
+   "jade_bead": "Assets/Art/Generated/Sprites2/cacao_pod.png",
+   "pyrite_sphere": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "sun_fragment": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "speed_gate": "Assets/Art/Generated/Bonuses/speed_gate.png",
+   "checkpoint": "Assets/Art/Generated/Props/mask_b.png",
+   "sun_altar": "Assets/Art/Generated/Props/serpent_head.png",
+   "xolotl": "Assets/Art/Generated/Props/xolotl.png"
+  },
+  "collectSize": 0.75
+ },
+ "playerStart": {
+  "x": 3,
+  "h": 1.0
+ },
+ "pickups": [
+  {
+   "type": "jade_bead",
+   "x": 5,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 7,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 14,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 17,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 20,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 26,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 30,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 34,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 53,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 68,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 70,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 90,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 93,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 116,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 119,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 122,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 126,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 139,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 142,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 145,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 42,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 45,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 51,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 61,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 76,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 95,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 102.5,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 108.5,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 131.5,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 152,
+   "h": 2.3
+  },
+  {
+   "type": "jade_bead",
+   "x": 79,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 81,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 83,
+   "h": 0.8
+  },
+  {
+   "type": "pyrite_sphere",
+   "x": 63,
+   "h": 2.2
+  },
+  {
+   "type": "sun_fragment",
+   "x": 80,
+   "h": 2.6
+  }
+ ],
+ "enemies": [
+  {
+   "type": "poison_frog",
+   "x": 31,
+   "h": 0.6,
+   "patrol": {
+    "xMin": 28,
+    "xMax": 35
+   }
+  },
+  {
+   "type": "jaguar_warrior",
+   "x": 50,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 46,
+    "xMax": 55
+   }
+  },
+  {
+   "type": "macaw",
+   "x": 60,
+   "h": 4.2,
+   "range": 3
+  },
+  {
+   "type": "carnivorous_plant",
+   "x": 72,
+   "h": 0,
+   "period": 2.4
+  },
+  {
+   "type": "macaw",
+   "x": 105,
+   "h": 4.4,
+   "range": 4
+  },
+  {
+   "type": "poison_frog",
+   "x": 124,
+   "h": 0.6,
+   "patrol": {
+    "xMin": 121,
+    "xMax": 127
+   }
+  },
+  {
+   "type": "carnivorous_plant",
+   "x": 143.5,
+   "h": 0,
+   "period": 2.2,
+   "offset": 1
+  },
+  {
+   "type": "jaguar_warrior",
+   "x": 155,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 152,
+    "xMax": 158
+   }
+  }
+ ],
+ "checkpoints": [
+  {
+   "id": "cp1",
+   "x": 38,
+   "h": 0
+  },
+  {
+   "id": "cp2",
+   "x": 66,
+   "h": 0
+  },
+  {
+   "id": "cp3",
+   "x": 92,
+   "h": 0
+  },
+  {
+   "id": "cp4",
+   "x": 118,
+   "h": 0
+  },
+  {
+   "id": "cp5",
+   "x": 140,
+   "h": 0
+  }
+ ],
+ "secrets": [
+  {
+   "type": "xolotl",
+   "x": 80,
+   "h": 1.2,
+   "loreCard": "xolotl_01"
+  }
+ ],
+ "goal": {
+  "type": "sun_altar",
+  "x": 158,
+  "h": 0
+ },
+ "decor": [],
+ "tutorialHints": [
+  {
+   "x": 4,
+   "h": 3,
+   "text": "The jungle remembers the sun"
+  },
+  {
+   "x": 24,
+   "h": 3,
+   "text": "Climb with momentum"
+  },
+  {
+   "x": 84,
+   "h": 3.2,
+   "text": "Roll back up the vine ramp!"
+  },
+  {
+   "x": 96,
+   "h": 3,
+   "text": "Time your jumps over the water"
+  }
+ ],
+ "jets": [],
+ "loops": [],
+ "fx": [
+  {
+   "type": "mist",
+   "x": 76.5,
+   "y": 1.5
+  }
+ ]
+}

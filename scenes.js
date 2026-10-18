@@ -2,14 +2,17 @@
 'use strict';
 // Every level plugs in here: level JSON, painted terrain JSON (+ segment PNGs in terrainDir), music key
 // (assets/audio/music/<key>.mp3), completion card (assets/ui/<card>.png) and par time for the time star.
+const BG1 = { L0_sky: 'assets/bg/L0_sky.jpg', L1_far: 'assets/bg/L1_far.webp', L2_mid: 'assets/bg/L2_mid.webp', L3_near: 'assets/bg/L3_near.webp' };
+const bgSet = (w) => ({ [w + '_L0_sky']: 'assets/bg/' + w + '/L0_sky.jpg', [w + '_L1_far']: 'assets/bg/' + w + '/L1_far.webp', [w + '_L2_mid']: 'assets/bg/' + w + '/L2_mid.webp', [w + '_L3_near']: 'assets/bg/' + w + '/L3_near.webp' });
 const LEVELS = [
-  { id: 'level01', name: 'Temple Outskirts', json: 'assets/levels/level01.json', terrain: 'assets/terrain/level01_terrain.json', terrainDir: 'assets/terrain/', music: 'temple', card: 'complete_level01', parTime: 150 },
-  // { id: 'level02', name: 'Jungle Roll', json: 'assets/levels/level02.json', terrain: 'assets/terrain/level02_terrain.json', terrainDir: 'assets/terrain/', music: 'jungle', card: 'complete_level02', parTime: 160 },
-  // { id: 'level03', name: 'Mictlan Depths', json: 'assets/levels/level03.json', terrain: 'assets/terrain/level03_terrain.json', terrainDir: 'assets/terrain/', music: 'mictlan', card: 'complete_level03', parTime: 180 },
+  { id: 'level01', name: 'Temple Outskirts', world: 'temple', collect: 'jade', json: 'assets/levels/level01.json', terrain: 'assets/terrain/level01_terrain.json', terrainDir: 'assets/terrain/', bg: BG1, music: 'temple', card: 'complete_level01', parTime: 150 },
+  { id: 'level02', name: 'Jungle Roll', world: 'jungle', collect: 'cacao', json: 'assets/levels/level02.json', terrain: 'assets/terrain/level02_terrain.json', terrainDir: 'assets/terrain/', bg: bgSet('jungle'), music: 'jungle', card: 'complete_level02', parTime: 210 },
+  { id: 'level03', name: 'Mictlan Depths', world: 'mictlan', collect: 'marigold', json: 'assets/levels/level03.json', terrain: 'assets/terrain/level03_terrain.json', terrainDir: 'assets/terrain/', bg: bgSet('mictlan'), music: 'mictlan', card: 'complete_level03', parTime: 240 },
 ];
 const UI_IMG = ['seal', 'logo', 'star', 'star_empty', 'button', 'button_gold'];
 function preloadCommon(sc) {
   for (const u of UI_IMG) if (!sc.textures.exists('ui_' + u)) sc.load.image('ui_' + u, V('assets/ui/' + u + '.png'));
+  if (!sc.textures.exists('ui_finale_sun')) sc.load.image('ui_finale_sun', V('assets/ui/finale_sun.png'));
   for (const L of LEVELS) if (!sc.textures.exists('ui_' + L.card)) sc.load.image('ui_' + L.card, V('assets/ui/' + L.card + '.png'));
   for (const s of TEX.sfx) if (!sc.cache.audio.exists(s)) sc.load.audio(s, V('assets/audio/sfx/' + s + '.mp3'));
 }
@@ -95,11 +98,13 @@ class Title extends Phaser.Scene {
     this.tweens.add({ targets: [this.orb, this.spec], y: 548, duration: 380, delay: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut', repeatDelay: 900 });
     this.prompt = this.add.text(LX, 660, 'Tap / press to start', Object.assign({}, TXT, { fontSize: '34px' })).setOrigin(0.5).setAlpha(0);
     this.tweens.add({ targets: this.prompt, alpha: 1, delay: 2200, duration: 500, onComplete: () => this.tweens.add({ targets: this.prompt, alpha: 0.35, duration: 700, yoyo: true, repeat: -1 }) });
-    this.add.text(VW - 16, VH - 12, 'Level 1 - ' + LEVELS[0].name, Object.assign({}, TXT, { fontSize: '16px', strokeThickness: 4 })).setOrigin(1, 1).setAlpha(0.7);
+    this.buildSelect();
+    this.add.text(VW - 16, VH - 12, 'Fifth Sun - ' + LEVELS.length + ' levels', Object.assign({}, TXT, { fontSize: '16px', strokeThickness: 4 })).setOrigin(1, 1).setAlpha(0.7);
     this.stage = AUDIO.unlocked() ? 1 : 0;
     if (this.stage) MUSIC.play(this, 'music_title', 0.5);
     const go = () => this.onTap();
-    this.input.on('pointerdown', go); this.input.keyboard.on('keydown', go);
+    this.input.on('pointerdown', (ptr, over) => { if (!over || !over.length) go(); }); this.input.keyboard.on('keydown', (ev) => { const n = +ev.key; if (this.stage === 1 && n >= 1 && n <= LEVELS.length) this.pick(n - 1); else go(); });
+    if (this.stage) this.showSelect();
     window.TEO_TITLE = this;
   }
   explode(first) {
@@ -121,12 +126,28 @@ class Title extends Phaser.Scene {
       this.stage = 1;
       const kick = () => { this.sound.play('ui_click', { volume: 0.6 }); this.explode(false); MUSIC.play(this, 'music_title', 0.5); };
       if (this.sound.locked) this.sound.once('unlocked', kick); else kick();
-      this.prompt.setText('Tap / press to play');
+      this.prompt.setText('Choose a level');
+      this.showSelect();
       return;
     }
+    this.pick(Math.min(unlockedLevels(), LEVELS.length) - 1);
+  }
+  buildSelect() {
+    const u = unlockedLevels(); this.sel = [];
+    LEVELS.forEach((L, i) => {
+      const x = VW / 2 + (i - (LEVELS.length - 1) / 2) * 250, y = 465, open = i < u;
+      const b = this.add.image(x, y, i === u - 1 ? 'ui_button_gold' : 'ui_button').setScale(0.5).setAlpha(0);
+      const t = this.add.text(x, y - 2, (i + 1) + '  ' + (open ? L.name : 'LOCKED'), Object.assign({}, TXT, { fontSize: '19px', color: '#2a1406', stroke: '#fff0c0', strokeThickness: 2 })).setOrigin(0.5).setAlpha(0);
+      if (open) { b.setInteractive({ useHandCursor: true }); b.on('pointerover', () => b.setScale(0.54)); b.on('pointerout', () => b.setScale(0.5)); b.on('pointerdown', () => { if (this.stage === 0) this.onTap(); else this.pick(i); }); }
+      this.sel.push({ b, t, open });
+    });
+  }
+  showSelect() { this.sel.forEach((o, i) => this.tweens.add({ targets: [o.b, o.t], alpha: o.open ? 1 : 0.38, delay: 300 + i * 120, duration: 300 })); this.tweens.add({ targets: this.prompt, y: 575, duration: 300 }); }
+  pick(i) {
+    if (this.leaving || i >= unlockedLevels()) return;
     this.leaving = true; this.sound.play('ui_click', { volume: 0.6 }); this.sound.play('card_whoosh', { volume: 0.5 });
     this.cameras.main.fadeOut(500, 10, 6, 20);
-    this.time.delayedCall(520, () => this.scene.start('game', { level: 0 }));
+    this.time.delayedCall(520, () => this.scene.start('game', { level: i }));
   }
 }
 Object.assign(Title.prototype, window.TEO_FXM);
@@ -206,9 +227,38 @@ class Complete extends Phaser.Scene {
   next() {
     if (this.leaving) return; this.leaving = true; const n = this.st.level + 1;
     this.scene.stop('game');
-    if (LEVELS[n]) this.scene.start('game', { level: n }); else { MUSIC.play(this, 'music_title', 0.5); this.scene.start('title'); }
+    if (LEVELS[n]) this.scene.start('game', { level: n }); else this.scene.start('finale');
   }
 }
+
+// ---------- Finale: the Fifth Sun is reborn; medallion, rays, fireworks, then back to the title ----------
+class Finale extends Phaser.Scene {
+  constructor() { super('finale'); }
+  create() {
+    setMenu(true); this.makeFxTextures(); MUSIC.play(this, 'music_title', 0.55);
+    const cx = VW / 2, cy = VH / 2 - 20;
+    this.add.rectangle(0, 0, VW, VH, 0x120818).setOrigin(0);
+    const glow = this.add.image(cx, cy, 'fx_soft').setTint(0xffb040).setBlendMode(Phaser.BlendModes.ADD).setScale(0).setAlpha(0.9);
+    this.tweens.add({ targets: glow, scale: 9, duration: 1600, ease: 'Cubic.out' });
+    for (let i = 0; i < 16; i++) { const r = this.add.image(cx, cy, 'fx_ray').setOrigin(0.5, 0).setRotation(i * Math.PI / 8).setBlendMode(Phaser.BlendModes.ADD).setTint(i % 2 ? 0xffc050 : 0xff7a3a).setAlpha(0).setScale(1.4, 1.1); this.tweens.add({ targets: r, alpha: 0.35, delay: 600, duration: 900 }); this.tweens.add({ targets: r, rotation: r.rotation + Math.PI * 2, duration: 40000, repeat: -1 }); }
+    const sun = this.add.image(cx, cy, 'ui_finale_sun').setScale(0).setRotation(-3);
+    const s = 560 / sun.width;
+    this.tweens.add({ targets: sun, scale: s, rotation: 0, duration: 1300, delay: 300, ease: 'Back.out' });
+    this.tweens.add({ targets: sun, scale: s * 1.04, duration: 1500, delay: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.cameras.main.flash(600, 255, 220, 150);
+    const t = this.add.text(cx, VH - 70, 'Teo has rekindled the sun. Thank you for playing!', Object.assign({}, TXT, { fontSize: '30px' })).setOrigin(0.5).setAlpha(0);
+    this.tweens.add({ targets: t, alpha: 1, delay: 1800, duration: 600 });
+    const fw = this.add.particles(0, 0, 'fx_spark', { speed: { min: 120, max: 480 }, angle: { min: 0, max: 360 }, lifespan: 1500, gravityY: 180, scale: { start: 0.7, end: 0 }, blendMode: 'ADD', emitting: false });
+    const cols = [0xffd060, 0x5fe0a8, 0xff6a4a, 0xff9ad0, 0x9fe8ff];
+    this.time.addEvent({ delay: 420, repeat: 22, callback: () => { fw.setParticleTint(cols[(Math.random() * cols.length) | 0]); fw.explode(LOWFX ? 30 : 70, 120 + Math.random() * (VW - 240), 80 + Math.random() * 300); if (AUDIO.unlocked()) this.sound.play(Math.random() < 0.5 ? 'fw_pop' : 'fw_crackle', { volume: 0.4 }); } });
+    let left = false; const leave = () => { if (left) return; left = true; this.cameras.main.fadeOut(700, 10, 6, 20); this.time.delayedCall(720, () => this.scene.start('title')); };
+    this.time.delayedCall(11000, leave);
+    this.time.delayedCall(2500, () => { this.input.on('pointerdown', leave); this.input.keyboard.on('keydown', leave); });
+    window.TEO_FINALE = this;
+  }
+}
+Object.assign(Finale.prototype, window.TEO_FXM);
+function unlockedLevels() { try { return Math.max(1, Math.min(LEVELS.length, +(localStorage.getItem('teoUnlocked') || 1))); } catch (_) { return 1; } }
 
 // ---------- boot ----------
 const SKIP_TITLE = QS.has('play') || (navigator.webdriver && !QS.has('title'));   // automated tests start straight in the level
@@ -221,7 +271,7 @@ function bootGame() { if (TEO_PHASER) return; TEO_PHASER = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'matter', matter: { gravity: { y: 1 }, debug: false } },
   input: { mouse: { preventDefaultDown: true } },
-  scene: SKIP_TITLE ? [window.TEO_GAME, Title, Complete] : [Title, window.TEO_GAME, Complete],
+  scene: SKIP_TITLE ? [window.TEO_GAME, Title, Complete, Finale] : [Title, window.TEO_GAME, Complete, Finale],
 }); window.TEO_PHASER = TEO_PHASER;
 AUDIO.game = TEO_PHASER; TEO_PHASER.sound.mute = AUDIO.muted(); }
 // wait (briefly) for the Cinzel webfont so canvas text uses it
