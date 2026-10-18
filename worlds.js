@@ -30,6 +30,7 @@ const WFX = {
     for (const r of this.rays || []) { if (W.rays === null) r.setVisible(false).setActive(false); else r.setTint(W.rays); }
     if (W.rays === null) this.rays = [];
     this.buildPits(); this.buildJets(); this.buildLoops();
+    if (this.L.world !== 'temple') this.dressWorld();
     if (this.L.world !== 'temple' && !LOWFX && !FXOFF.has('amb')) {
       for (const e of this.ambientEm || []) e.destroy();
       this.ambientEm = this.L.world === 'jungle' ? this.jungleAmbient() : this.mictlanAmbient();
@@ -61,6 +62,38 @@ const WFX = {
     this.time.addEvent({ delay: 140, loop: true, callback: () => { const cam = this.cameras.main, x = cam.scrollX + Math.random() * VW, gy = this.groundY(x, -1e9); if (isFinite(gy)) glints.emitParticleAt(x, gy - Math.random() * 90, 1); } });
     em.push(glints);
     return em;
+  },
+  // ---------- world dressing: glowing props, world-specific foreground, light pools, extra haze ----------
+  dressWorld() {
+    const J = this.L.world === 'jungle';
+    // (cacao / marigold glow lives on the collectibles' halo in main.js; extra glowing props read as pickups, so none here)
+    if (FXOFF.has('fg')) return;
+    // world-specific dark foreground: jungle = dense ferns + hanging vines, mictlan = stalactites + crystal spires
+    if (!this.textures.exists('fx_fg_stal')) this.canvasTex('fx_fg_stal', 520, 300, (c, W, H) => {
+      c.filter = 'blur(4px)'; let sd = 5; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 9; i++) { const x = 20 + rnd() * (W - 40), w = 18 + rnd() * 40, l = H * (0.3 + rnd() * 0.68);
+        const g = c.createLinearGradient(x - w, 0, x + w, 0); g.addColorStop(0, '#3a2a56'); g.addColorStop(0.3, '#150c22'); g.addColorStop(1, '#06030c');
+        c.fillStyle = g; c.beginPath(); c.moveTo(x - w, -4); c.quadraticCurveTo(x - w * 0.3, l * 0.6, x, l); c.quadraticCurveTo(x + w * 0.3, l * 0.6, x + w, -4); c.fill(); }
+    });
+    if (!this.textures.exists('fx_fg_vine')) this.canvasTex('fx_fg_vine', 360, 420, (c, W, H) => {
+      c.filter = 'blur(4px)'; c.strokeStyle = '#08100a'; c.fillStyle = '#0a160c'; let sd = 3; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 6; i++) { const x = 30 + rnd() * (W - 60), l = H * (0.5 + rnd() * 0.5); c.lineWidth = 5; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 30, l / 2, x - 10, l); c.stroke();
+        for (let y = 30; y < l; y += 26) { c.beginPath(); c.ellipse(x + 10 * Math.sin(y), y, 16, 7, rnd() * 3, 0, 7); c.fill(); } }
+    });
+    for (const f of this.fgp || []) f.im.destroy();
+    this.fgp = [];
+    const set = J ? [['fx_fg_fern', 60, 1, 0.85], ['fx_fg_vine', 420, 0, 0.8], ['fx_fg_fern', 900, 1, 0.7], ['fx_fg_hang', 1250, 0, 0.9], ['fx_fg_fern', 1700, 1, 0.95], ['fx_fg_vine', 2150, 0, 0.7], ['fx_fg_fern', 2500, 1, 0.6], ['fx_fg_hang', 2850, 0, 0.75]]
+      : [['fx_fg_stal', 100, 0, 0.9], ['fx_fg_pillar', 560, 1, 0.75], ['fx_fg_stal', 1050, 0, 0.7], ['fx_fg_stal', 1600, 0, 1.0], ['fx_fg_pillar', 2100, 1, 0.6], ['fx_fg_stal', 2600, 0, 0.8]];
+    for (const [k, bx, by, sc] of set) this.fgp.push({ im: this.add.image(0, 0, k).setOrigin(0, by).setScrollFactor(0).setDepth(50).setScale(sc).setAlpha(0.9).setTint(J ? 0x9ac090 : 0x8070b0), bx, by });
+    if (LOWFX) return;
+    // light pools (screen space, additive): jungle = warm green key from upper left; mictlan = turquoise left / magenta right
+    const pool = (x, y, sw, sh, tint, a) => { const im = this.add.image(x, y, 'fx_soft').setScrollFactor(0).setDepth(89).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setDisplaySize(sw, sh).setAlpha(a);
+      this.tweens.add({ targets: im, alpha: a * 0.65, duration: 3000 + Math.random() * 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); return im; };
+    if (J) { pool(VW * 0.12, VH * 0.05, VW * 1.1, VH * 1.0, 0xd8ff90, 0.22); pool(VW * 0.7, VH * 0.95, VW * 0.9, VH * 0.5, 0x60a040, 0.12); }
+    else { pool(VW * 0.08, VH * 0.3, VW * 0.8, VH * 1.1, 0x30e8e0, 0.16); pool(VW * 0.95, VH * 0.2, VW * 0.8, VH * 1.0, 0xe040c0, 0.14); pool(VW * 0.5, VH * 1.05, VW * 1.4, VH * 0.45, 0xff6020, 0.14); }
+    // low ground haze band that hides rough background mattes behind the walking surface
+    const haze = this.add.tileSprite(0, VH * 0.5, VW, 256, 'fx_fog').setOrigin(0).setScrollFactor(0).setDepth(-96.5).setAlpha(J ? 0.5 : 0.7).setTileScale(2, 1.4).setScale(1, 1.5).setTint(J ? 0xb8e0a0 : 0x7a5ab0);
+    this.fog.push({ ts: haze, s: 0.6, fy: 0.25, y0: VH * 0.5 });
   },
   buildPits() {
     // kill sensors at the bottom of every pit in the terrain file, plus lava glow / water shimmer
