@@ -1,0 +1,561 @@
+{
+ "id": "Level01",
+ "name": "Temple Outskirts",
+ "world": "Temple",
+ "unitPixels": 256,
+ "bounds": {
+  "xMin": -2,
+  "yMin": -12,
+  "xMax": 124,
+  "yMax": 20
+ },
+ "background": "Temple",
+ "playerStart": {
+  "x": 2,
+  "y": 1.5
+ },
+ "tiles": [
+  {
+   "x": -2,
+   "y": -4,
+   "w": 22,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 23,
+   "y": -4,
+   "w": 7,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 20,
+   "y": -8,
+   "w": 3,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 30,
+   "y": -4,
+   "w": 4,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 34,
+   "y": -4,
+   "w": 3,
+   "h": 5.657,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 37,
+   "y": -4,
+   "w": 3,
+   "h": 5.657,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 40,
+   "y": -4,
+   "w": 2,
+   "h": 7.389,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 56,
+   "y": -4,
+   "w": 4,
+   "h": 7.389,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 60,
+   "y": -4,
+   "w": 3,
+   "h": 7.389,
+   "set": "Terrace",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 63,
+   "y": -4,
+   "w": 3,
+   "h": 9.389,
+   "set": "Terrace",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 66,
+   "y": -4,
+   "w": 3,
+   "h": 11.389,
+   "set": "Terrace",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 69,
+   "y": -4,
+   "w": 3,
+   "h": 13.389,
+   "set": "Terrace",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 72,
+   "y": -4,
+   "w": 3,
+   "h": 15.389,
+   "set": "Terrace",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 75,
+   "y": 9.389,
+   "w": 14,
+   "h": 2,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 89,
+   "y": -12,
+   "w": 1,
+   "h": 23.389,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 93,
+   "y": -12,
+   "w": 1,
+   "h": 17.389,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 89,
+   "y": -12,
+   "w": 22,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 80,
+   "y": -12,
+   "w": 9,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 80,
+   "y": -8,
+   "w": 1,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 105,
+   "y": -12,
+   "w": 8,
+   "h": 4,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  },
+  {
+   "x": 113,
+   "y": -12,
+   "w": 11,
+   "h": 12,
+   "set": "Stone",
+   "top": "block_top",
+   "fill": "block_fill"
+  }
+ ],
+ "ramps": [
+  {
+   "x": 30,
+   "y": 0,
+   "angle": 22.5,
+   "run": 4,
+   "rise": 1.657,
+   "direction": "up",
+   "set": "Stone",
+   "sprite": "ramp_22_5"
+  },
+  {
+   "x": 37,
+   "y": 1.657,
+   "angle": 30,
+   "run": 3,
+   "rise": 1.732,
+   "direction": "up",
+   "set": "Stone",
+   "sprite": "ramp_30"
+  },
+  {
+   "x": 105,
+   "y": -8,
+   "angle": 45,
+   "run": 8,
+   "rise": 8.0,
+   "direction": "up",
+   "set": "Stone",
+   "sprite": "ramp_45"
+  }
+ ],
+ "shapes": [
+  {
+   "id": "plaza_bowl",
+   "profile": "temple_curve",
+   "closed": false,
+   "fillBelowTo": -6,
+   "points": [
+    {
+     "x": 42,
+     "y": 3.389,
+     "tangent": "continuous"
+    },
+    {
+     "x": 44,
+     "y": 2.189,
+     "tangent": "continuous"
+    },
+    {
+     "x": 46,
+     "y": -2.2,
+     "tangent": "continuous"
+    },
+    {
+     "x": 49,
+     "y": -3.2,
+     "tangent": "continuous"
+    },
+    {
+     "x": 52,
+     "y": -2.2,
+     "tangent": "continuous"
+    },
+    {
+     "x": 54,
+     "y": 2.189,
+     "tangent": "continuous"
+    },
+    {
+     "x": 56,
+     "y": 3.389,
+     "tangent": "continuous"
+    }
+   ]
+  },
+  {
+   "id": "ledge_hump",
+   "profile": "temple_curve",
+   "closed": false,
+   "fillBelowTo": 9.389,
+   "points": [
+    {
+     "x": 78,
+     "y": 11.389,
+     "tangent": "continuous"
+    },
+    {
+     "x": 80,
+     "y": 12.389,
+     "tangent": "continuous"
+    },
+    {
+     "x": 82,
+     "y": 11.389,
+     "tangent": "continuous"
+    }
+   ]
+  }
+ ],
+ "enemies": [
+  {
+   "type": "stone_mask_roller",
+   "x": 85,
+   "y": 11.988999999999999,
+   "patrol": {
+    "xMin": 83,
+    "xMax": 88.5
+   }
+  }
+ ],
+ "traps": [
+  {
+   "type": "spike_strip",
+   "x": 20,
+   "y": -3,
+   "w": 3
+  },
+  {
+   "type": "crumbling_step",
+   "x": 66,
+   "y": 7.389,
+   "w": 3
+  },
+  {
+   "type": "tilting_slab",
+   "x": 97,
+   "y": -6,
+   "w": 4
+  }
+ ],
+ "pickups": [
+  {
+   "type": "jade_bead",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 10,
+   "y": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 12,
+   "y": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 14,
+   "y": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 21.5,
+   "y": 2.5
+  },
+  {
+   "type": "pyrite_sphere",
+   "x": 41,
+   "y": 4.389
+  },
+  {
+   "type": "jade_bead",
+   "x": 46,
+   "y": -1.5
+  },
+  {
+   "type": "jade_bead",
+   "x": 49,
+   "y": -1.5
+  },
+  {
+   "type": "jade_bead",
+   "x": 52,
+   "y": -1.5
+  },
+  {
+   "type": "sun_fragment",
+   "x": 73,
+   "y": 14.389,
+   "index": 1
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 10
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 8
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 6
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 4
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 2
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": 0
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": -2
+  },
+  {
+   "type": "jade_bead",
+   "x": 91.5,
+   "y": -4
+  },
+  {
+   "type": "sun_fragment",
+   "x": 84,
+   "y": -7,
+   "index": 2,
+   "secret": "alcove1"
+  },
+  {
+   "type": "speed_gate",
+   "x": 101,
+   "y": -6.5
+  }
+ ],
+ "checkpoints": [
+  {
+   "id": "cp1",
+   "x": 58,
+   "y": 3.8890000000000002
+  }
+ ],
+ "secrets": [
+  {
+   "type": "cracked_wall",
+   "x": 89,
+   "y": -7.5,
+   "w": 1,
+   "h": 3,
+   "minSpeed": 6.0,
+   "reveals": "alcove1"
+  },
+  {
+   "type": "xolotl",
+   "x": 82,
+   "y": -7,
+   "loreCard": "xolotl_01"
+  }
+ ],
+ "goal": {
+  "type": "sun_altar",
+  "x": 120,
+  "y": 0.5
+ },
+ "tutorialHints": [
+  {
+   "x": 3,
+   "y": 3,
+   "key": "hint_roll",
+   "text": "A / D to roll"
+  },
+  {
+   "x": 17,
+   "y": 3,
+   "key": "hint_jump",
+   "text": "Space to jump"
+  },
+  {
+   "x": 31,
+   "y": 3,
+   "key": "hint_momentum",
+   "text": "Build speed before the ramp"
+  },
+  {
+   "x": 47,
+   "y": 5.389,
+   "key": "hint_bowl",
+   "text": "Rock left and right to climb out"
+  },
+  {
+   "x": 80,
+   "y": 14.389,
+   "key": "hint_enemy",
+   "text": "Jump on the roller with momentum"
+  }
+ ],
+ "decor": [
+  {
+   "type": "mask_a",
+   "x": 17.5,
+   "y": 0.9
+  },
+  {
+   "type": "serpent_head",
+   "x": 27,
+   "y": 0.9
+  },
+  {
+   "type": "mask_b",
+   "x": 58.5,
+   "y": 4.689
+  },
+  {
+   "type": "serpent_head",
+   "x": 118,
+   "y": 0.9
+  }
+ ],
+ "art": {
+  "backgrounds": "Assets/Art/Generated/Backgrounds/Temple/Temple_{layer}.png",
+  "layers": [
+   "L0_sky",
+   "L1_far",
+   "L2_mid",
+   "L3_near"
+  ],
+  "blocks": "Assets/Art/Generated/Blocks/{set}/{name}.png",
+  "player": "Assets/Art/Generated/Player/orb.png",
+  "playerRoll": "Assets/Art/Generated/Player/roll/orb_roll_{i:02d}.png",
+  "sprites": {
+   "jade_bead": "Assets/Art/Generated/Bonuses/jade_bead.png",
+   "pyrite_sphere": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "sun_fragment": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "speed_gate": "Assets/Art/Generated/Bonuses/speed_gate.png",
+   "stone_mask_roller": "Assets/Art/Generated/Enemies/mask_roller.png",
+   "spike_strip": "Assets/Art/Generated/Traps/spike_strip.png",
+   "crumbling_step": "Assets/Art/Generated/Traps/tilting_slab.png",
+   "tilting_slab": "Assets/Art/Generated/Traps/tilting_slab.png",
+   "cracked_wall": "Assets/Art/Generated/Props/cracked_wall.png",
+   "xolotl": "Assets/Art/Generated/Props/xolotl.png",
+   "checkpoint": "Assets/Art/Generated/Props/mask_a.png",
+   "sun_altar": "Assets/Art/Generated/Props/serpent_head.png",
+   "mask_a": "Assets/Art/Generated/Props/mask_a.png",
+   "mask_b": "Assets/Art/Generated/Props/mask_b.png",
+   "serpent_head": "Assets/Art/Generated/Props/serpent_head.png"
+  }
+ }
+}

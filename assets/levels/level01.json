@@ -1,0 +1,290 @@
+{
+ "id": "Level01",
+ "name": "Temple Outskirts (painted terrain)",
+ "terrain": "assets/terrain/level01_terrain.json",
+ "note": "Entities are placed by x (level units, 64 world px) and h = height above the terrain surface at that x (units); the game resolves y from the collision polylines.",
+ "art": {
+  "backgrounds": "Assets/Art/Generated/Backgrounds/Temple/Temple_{layer}.png",
+  "layers": [
+   "L0_sky",
+   "L1_far",
+   "L2_mid",
+   "L3_near"
+  ],
+  "blocks": "Assets/Art/Generated/Blocks/{set}/{name}.png",
+  "player": "Assets/Art/Generated/Player/orb.png",
+  "playerRoll": "Assets/Art/Generated/Player/roll/orb_roll_{i:02d}.png",
+  "sprites": {
+   "jade_bead": "Assets/Art/Generated/Bonuses/jade_bead.png",
+   "pyrite_sphere": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "sun_fragment": "Assets/Art/Generated/Bonuses/sun_fragment.png",
+   "speed_gate": "Assets/Art/Generated/Bonuses/speed_gate.png",
+   "stone_mask_roller": "Assets/Art/Generated/Enemies/mask_roller.png",
+   "spike_strip": "Assets/Art/Generated/Traps/spike_strip.png",
+   "crumbling_step": "Assets/Art/Generated/Traps/tilting_slab.png",
+   "tilting_slab": "Assets/Art/Generated/Traps/tilting_slab.png",
+   "cracked_wall": "Assets/Art/Generated/Props/cracked_wall.png",
+   "xolotl": "Assets/Art/Generated/Props/xolotl.png",
+   "checkpoint": "Assets/Art/Generated/Props/mask_a.png",
+   "sun_altar": "Assets/Art/Generated/Props/serpent_head.png",
+   "mask_a": "Assets/Art/Generated/Props/mask_a.png",
+   "mask_b": "Assets/Art/Generated/Props/mask_b.png",
+   "serpent_head": "Assets/Art/Generated/Props/serpent_head.png"
+  }
+ },
+ "playerStart": {
+  "x": 3,
+  "h": 1.0
+ },
+ "pickups": [
+  {
+   "type": "jade_bead",
+   "x": 6,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 9,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 12,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 15,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 18,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 28,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 30,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 32,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 36,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 39,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 42,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 53,
+   "h": 0.9
+  },
+  {
+   "type": "jade_bead",
+   "x": 56,
+   "h": 0.9
+  },
+  {
+   "type": "jade_bead",
+   "x": 75,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 77,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 79,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 81,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 96,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 100,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 104,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 108,
+   "h": 0.8
+  },
+  {
+   "type": "jade_bead",
+   "x": 116,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 118,
+   "h": 0.7
+  },
+  {
+   "type": "jade_bead",
+   "x": 120,
+   "h": 0.7
+  },
+  {
+   "type": "speed_gate",
+   "x": 44,
+   "h": 1.1
+  },
+  {
+   "type": "sun_fragment",
+   "x": 66,
+   "h": 2.6,
+   "secret": true
+  },
+  {
+   "type": "pyrite_sphere",
+   "x": 127,
+   "h": 3.0,
+   "abs": true
+  },
+  {
+   "type": "sun_fragment",
+   "x": 78,
+   "h": 3.2
+  }
+ ],
+ "enemies": [
+  {
+   "type": "stone_mask_roller",
+   "x": 39,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 36,
+    "xMax": 44
+   }
+  },
+  {
+   "type": "stone_mask_roller",
+   "x": 102,
+   "h": 0.7,
+   "patrol": {
+    "xMin": 98,
+    "xMax": 107
+   }
+  },
+  {
+   "type": "serpent_spirit",
+   "x": 79,
+   "h": 3.0,
+   "hover": {
+    "xMin": 75,
+    "xMax": 83
+   }
+  },
+  {
+   "type": "serpent_spirit",
+   "x": 118,
+   "h": 3.5,
+   "hover": {
+    "xMin": 115,
+    "xMax": 121
+   }
+  }
+ ],
+ "checkpoints": [
+  {
+   "id": "cp1",
+   "x": 62,
+   "h": 0
+  },
+  {
+   "id": "cp2",
+   "x": 96,
+   "h": 0
+  }
+ ],
+ "secrets": [
+  {
+   "type": "xolotl",
+   "x": 24,
+   "h": 2.6,
+   "loreCard": "xolotl_01"
+  }
+ ],
+ "goal": {
+  "type": "sun_altar",
+  "x": 132,
+  "h": 0
+ },
+ "decor": [
+  {
+   "type": "mask_a",
+   "x": 20,
+   "h": 0
+  },
+  {
+   "type": "serpent_head",
+   "x": 59,
+   "h": 0
+  },
+  {
+   "type": "mask_b",
+   "x": 88,
+   "h": 0
+  }
+ ],
+ "tutorialHints": [
+  {
+   "x": 4,
+   "h": 3,
+   "text": "A / D or ◀ ▶ to roll"
+  },
+  {
+   "x": 27,
+   "h": 2.6,
+   "text": "Drop into the quarter pipe"
+  },
+  {
+   "x": 46,
+   "h": 2.6,
+   "text": "Build speed for the 30° ramp"
+  },
+  {
+   "x": 79,
+   "h": 5.2,
+   "text": "Rock left and right to climb out"
+  },
+  {
+   "x": 122,
+   "h": 2.4,
+   "text": "Jump the gap!"
+  }
+ ]
+}
