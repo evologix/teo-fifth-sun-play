@@ -145,8 +145,8 @@ const FXM = {
     const xs = LV.braziers || (this.L.world === 'temple' ? [11, 31, 47.5, 66, 92, 112, 127.5] : []);
     for (const ux of xs) {
       const x = ux * U, gy = this.groundY(x, -1e9); if (!isFinite(gy)) continue;
-      const im = this.add.image(x, gy + 6, 'fx_brazier').setOrigin(0.5, 1).setDepth(1.5).setScale(0.62);
-      const top = gy + 6 - 200 * 0.62 + 34 * 0.62;
+      const BS = 0.8, im = this.add.image(x, gy + 6, 'fx_brazier').setOrigin(0.5, 1).setDepth(1.5).setScale(BS);
+      const top = gy + 6 - 200 * BS + 34 * BS;
       const sh = this.addShadow(120); this.placeShadow(sh, x, gy);
       const pool = this.add.image(x, top - 10, 'fx_soft').setDepth(1.4).setTint(0xff9a3a).setBlendMode(Phaser.BlendModes.ADD).setScale(3.2).setAlpha(0.35);
       this.tweens.add({ targets: pool, alpha: 0.22, scale: 2.9, duration: 120 + Math.random() * 80, yoyo: true, repeat: -1, repeatDelay: Math.random() * 200 });
@@ -260,6 +260,7 @@ const FXM = {
     for (const f of this.fog) f.ts.setVisible(on);
     for (const b of this.braziers || []) if (b.smoke) b.smoke.setVisible(on).emitting = on;
     for (const e of this.ambientEm || []) { e.setVisible(on); e.emitting = on; }
+    if (this.setFxPolish) this.setFxPolish(on);
   },
   hitFlash(img, ms = 80) { if (!img || !img.setTintFill) return; img.setTintFill(0xfff6e0); this.time.delayedCall(ms, () => img.active && img.clearTint()); },
 };

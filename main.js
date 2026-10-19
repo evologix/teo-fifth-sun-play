@@ -187,7 +187,7 @@ const TEX = {
     'mask_a', 'mask_b', 'serpent_head', 'xolotl', 'spike_strip', 'tilting_slab'],
   blocks: ['block_fill', 'block_top', 'block_corner_L', 'block_corner_R', 'ramp_22_5', 'ramp_30', 'ramp_45', 'spriteshape_fill', 'edge_strip'],
   sfx: ['jump', 'land', 'land_stone', 'jade', 'pyrite', 'sun_fragment', 'fire', 'hit', 'enemy_death', 'goal_unlock', 'fw_launch', 'fw_pop', 'fw_crackle', 'card_whoosh',
-    'card_impact', 'ui_click', 'ui_tick', 'star', 'title_boom', 'roll_loop', 'stone_bonk', 'creak', 'door_open'],
+    'card_impact', 'ui_click', 'ui_tick', 'star', 'title_boom', 'roll_loop', 'stone_bonk', 'creak', 'door_open'].concat(window.SFX_V4 || []),
 };
 
 const artKey = (type) => { const p = LV && LV.art && LV.art.sprites[type]; return p ? p.split('/').pop().replace('.png', '') : type; };
@@ -203,7 +203,7 @@ class Game extends Phaser.Scene {
     this.load.once('filecomplete-json-' + L.id + '_terrain', (key, type, data) => data.segments.forEach((sg, i) => this.load.image(L.id + '_seg' + i, V(L.terrainDir + sg.image))));
     for (const [k, p] of Object.entries(L.bg || TEX.bg)) if (!this.textures.exists(k)) this.load.image(k, V(p));
     for (const s of TEX.sprites) if (!this.textures.exists(s)) this.load.image(s, V('assets/sprites/' + s + '.png'));
-    this.preloadWorld(L);
+    this.preloadWorld(L); this.preloadPolish();
     preloadCommon(this);
     this.load.audio('music_' + L.music, V('assets/audio/music/' + L.music + '.mp3'));
   }
@@ -233,7 +233,7 @@ class Game extends Phaser.Scene {
     this.buildTerrain(); this.buildSurfaceCache(); this.makeParticles(); this.shadows = [];
     this.buildDecor(); this.traps = []; this.buildSecrets(); this.buildPickups(); this.buildEnemies();
     this.buildCheckpointsAndGoal(); this.buildHints();
-    this.makePlayer(); this.buildBraziers(); this.buildAmbient(); this.buildWorld(); this.fxOn = !LOWFX;
+    this.makePlayer(); this.buildBraziers(); this.buildAmbient(); this.buildWorld(); this.fxOn = !LOWFX; this.buildPolish();
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.W, this.H);
@@ -264,7 +264,7 @@ class Game extends Phaser.Scene {
     setMenu(false);
     window.TEO = { lowfx: LOWFX, fps: () => this.game.loop.actualFps, scene: this, teleport: (x, y) => this.teleport(x, y), state: () => this.debugState(), shots: () => this.shots || 0,
       pickups: () => (this.pickupRefs || []).map((r, i) => ({ i, type: r.p.type, tag: r.p.tag || '', x: r.p.x, y: r.p.y, taken: !!r.taken })), goalLocked: () => this.goal.locked,
-      surf: (x) => LV.bounds.yMax - this.surfaceAt(x * U) / U };
+      surf: (x) => LV.bounds.yMax - this.surfaceAt(x * U) / U, pol: () => this.polishState(), lightning: (pu) => this.lightning(!!pu) };
   }
 
   // ---------- audio ----------
@@ -273,9 +273,9 @@ class Game extends Phaser.Scene {
     this.audioStarted = true;
     try { if (this.sound.context && this.sound.context.state === 'suspended') this.sound.context.resume(); } catch (e) { }
     MUSIC.play(this, 'music_' + this.L.music, 0.42);
-    if (this.cache.audio.exists('roll_loop')) { this.rollSnd = this.sound.add('roll_loop', { loop: true, volume: 0 }); this.rollSnd.play(); }
+    this.startPolishAudio();   // surface roll loops, whoosh, ambience (polish.js)
   }
-  sfx(k, vol = 0.6, rate = 1) { if (this.audioStarted && this.cache.audio.exists(k)) this.sound.play(k, { volume: vol, rate }); }
+  sfx(k, vol = 0.6, rate = 1, pan = 0) { if (this.audioStarted && this.cache.audio.exists(k)) { const v = vol * AUDIO_MIX.sfx(); if (v > 0.005) this.sound.play(k, { volume: v, rate, pan }); } }
   updateRollSound(sp, grounded) {
     if (!this.rollSnd) return;
     const v = grounded && !this.done ? Phaser.Math.Clamp((sp - 0.4) / 14, 0, 1) : 0;
@@ -375,7 +375,7 @@ class Game extends Phaser.Scene {
     if (anchor === 'b') im.setOrigin(0.5, 1);
     return im;
   }
-  buildDecor() { for (const d of LV.decor || []) this.spr(artKey(d.type), d.x, d.y - 0.9, 1.8, 'b', -1).setAlpha(0.95); }
+  buildDecor() { for (const d of LV.decor || []) this.spr(artKey(d.type), d.x, d.y - 0.9, 2.4, 'b', -1).setAlpha(0.95); }
   buildTraps() {
     this.traps = [];
     for (const t of LV.traps) {
@@ -425,7 +425,7 @@ class Game extends Phaser.Scene {
         const img = this.add.image(x0, y0, 'cracked_wall').setOrigin(0).setDisplaySize(s.w * U, y1 - y0).setDepth(3);
         body.secret = { s, img, body };
       } else if (s.type === 'xolotl') {
-        const img = this.spr('xolotl', s.x, s.y, 1.5);
+        const img = this.spr('xolotl', s.x, s.y, 2.0);
         this.tweens.add({ targets: img, y: img.y - 6, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         const body = this.matter.add.circle(img.x, img.y, 0.7 * U, { isStatic: true, isSensor: true, label: 'xolotl' });
         body.ref = { img, s };
@@ -433,7 +433,7 @@ class Game extends Phaser.Scene {
     }
   }
   buildPickups() {
-    const size = { jade_bead: (LV.art && LV.art.collectSize) || 0.6, speed_gate: 2.2, sun_fragment: 1.1, pyrite_sphere: 0.8 };
+    const SZ = 1.4, size = { jade_bead: ((LV.art && LV.art.collectSize) || 0.6) * SZ, speed_gate: 2.2, sun_fragment: 1.1 * SZ, pyrite_sphere: 0.8 * SZ };   // v4: 1.4x, hitbox scales with it
     for (const p of LV.pickups) {
       const img = this.spr(artKey(p.type), p.x, p.y, size[p.type], 'c', p.type === 'speed_gate' ? 2 : 4);
       if (p.type === 'pyrite_sphere') img.setTint(0xe8c060);
@@ -454,7 +454,8 @@ class Game extends Phaser.Scene {
       const shadow = this.addShadow(size[p.type] * U * 1.1); this.placeShadow(shadow, img.x, img.y + size[p.type] * U * 0.4);
       if (p.type !== 'jade_bead') { this.fxGlow(img, 0xffb030, 5); this.tweens.add({ targets: img, angle: 360, duration: 6000, repeat: -1 }); }
       img.extras = [halo, glint, shadow];
-      const body = this.matter.add.circle(img.x, img.y, size[p.type] * U * 0.45, { isStatic: true, isSensor: true, label: 'pickup' });
+      const body = this.matter.add.circle(img.x, img.y, size[p.type] * U * 0.42, { isStatic: true, isSensor: true, label: 'pickup' });
+      img.setAlpha(0); this.tweens.add({ targets: img, alpha: 1, duration: 450, delay: 150 + Math.random() * 700 });   // spawn fade-in (scale is owned by the bob tween)
       body.ref = { img, p, body }; (this.pickupRefs = this.pickupRefs || []).push(body.ref);
     }
   }
@@ -465,28 +466,28 @@ class Game extends Phaser.Scene {
     // extra hovering serpent spirit over the sunken plaza (not in Level01.json; demonstrates the hover behaviour)
     for (const e of list) {
       if (e.type === 'stone_mask_roller') {
-        const r = 0.6 * U;
-        const body = this.matter.add.circle(this.X(e.x), this.Y(e.y) - 4, r, { label: 'enemy', friction: 0.5, restitution: 0.2, density: 0.002, frictionAir: 0.01 });
-        const img = this.add.image(body.position.x, body.position.y, 'mask_roller').setDepth(5); img.setScale(2 * r / Math.max(img.width, img.height) * 1.08);
+        const r = 0.72 * U;
+        const body = this.matter.add.circle(this.X(e.x), this.Y(e.y) - 14, r, { label: 'enemy', friction: 0.5, restitution: 0.2, density: 0.002, frictionAir: 0.01 });
+        const img = this.add.image(body.position.x, body.position.y, 'mask_roller').setDepth(5); img.setScale(2 * r / Math.max(img.width, img.height) * 1.2);
         const en = { kind: 'roller', e, body, img, dir: 1, alive: true, home: { x: body.position.x, y: body.position.y }, s0: img.scale, sq: 0, pvy: 0, r };
-        en.rig = this.addLightRig(img.x, img.y, 2 * r * 1.04, 5); en.shadow = this.addShadow(2.4 * r);
+        en.rig = this.addLightRig(img.x, img.y, 2 * r * 1.16, 5); en.shadow = this.addShadow(2.4 * r);
         body.enemy = en; this.enemies.push(en);
       } else if (e.type === 'serpent_spirit') {
-        const img = this.spr('serpent_spirit', e.x, e.y, 1.4, 'c', 5);
-        const body = this.matter.add.circle(img.x, img.y, 0.5 * U, { isStatic: true, isSensor: true, label: 'enemy' });
-        const segs = []; for (let i = 0; i < 9; i++) segs.push(this.add.image(img.x, img.y, 'fx_seg').setDepth(4.9 - i * 0.01).setScale(0.62 - i * 0.045));
+        const img = this.spr('serpent_spirit', e.x, e.y, 2.0, 'c', 5);
+        const body = this.matter.add.circle(img.x, img.y, 0.6 * U, { isStatic: true, isSensor: true, label: 'enemy' });
+        const segs = []; for (let i = 0; i < 9; i++) segs.push(this.add.image(img.x, img.y, 'fx_seg').setDepth(4.9 - i * 0.01).setScale((0.62 - i * 0.045) * 1.4));
         const en = { kind: 'hover', e, body, img, alive: true, t: Math.random() * 6, base: { x: img.x, y: img.y }, segs, hist: [], s0: img.scale };
-        en.shadow = this.addShadow(1.4 * U); en.aura = this.add.image(img.x, img.y, 'fx_soft').setDepth(4.8).setTint(0x5fe0a8).setBlendMode(Phaser.BlendModes.ADD).setScale(1.6).setAlpha(0.3);
+        en.shadow = this.addShadow(1.4 * U); en.aura = this.add.image(img.x, img.y, 'fx_soft').setDepth(4.8).setTint(0x5fe0a8).setBlendMode(Phaser.BlendModes.ADD).setScale(2.3).setAlpha(0.3);
         body.enemy = en; this.enemies.push(en);
       } else if (e.type !== 'flyer') {
         const en = this.makeWorldEnemy(e); if (en) this.enemies.push(en);
       } else if (e.type === 'flyer') {
         const x = this.X(e.x), y = this.Y(e.y);
-        const wb = this.add.image(x, y, 'fx_wing').setOrigin(0.05, 0.9).setDepth(4.8).setTint(0x8a6a4e).setScale(0.55);
-        const bd = this.add.image(x, y, 'fx_fbody').setDepth(5).setScale(0.5);
-        const wf = this.add.image(x, y, 'fx_wing').setOrigin(0.05, 0.9).setDepth(5.1).setScale(0.6);
-        const body = this.matter.add.circle(x, y, 0.4 * U, { isStatic: true, isSensor: true, label: 'enemy' });
-        const en = { kind: 'flyer', e, body, img: bd, wings: [wb, wf], alive: true, t: Math.random() * 6, base: { x, y } };
+        const wb = this.add.image(x, y, 'fx_wing').setOrigin(0.05, 0.9).setDepth(4.8).setTint(0x8a6a4e).setScale(0.77);
+        const bd = this.add.image(x, y, 'fx_fbody').setDepth(5).setScale(0.7);
+        const wf = this.add.image(x, y, 'fx_wing').setOrigin(0.05, 0.9).setDepth(5.1).setScale(0.84);
+        const body = this.matter.add.circle(x, y, 0.48 * U, { isStatic: true, isSensor: true, label: 'enemy' });
+        const en = { kind: 'flyer', e, body, img: bd, wings: [wb, wf], alive: true, t: Math.random() * 6, base: { x, y }, s0: 0.7 };
         en.shadow = this.addShadow(1.2 * U); body.enemy = en; this.enemies.push(en);
       }
     }
@@ -494,7 +495,7 @@ class Game extends Phaser.Scene {
   buildCheckpointsAndGoal() {
     this.checkpoint = { x: this.X(LV.playerStart.x), y: this.Y(LV.playerStart.y) };
     for (const c of LV.checkpoints) {
-      const img = this.spr(artKey('checkpoint'), c.x, c.y - 0.5, 1.6, 'b', 2).setTint(0x9090a0);
+      const img = this.spr(artKey('checkpoint'), c.x, c.y - 0.5, 2.1, 'b', 2).setTint(0x9090a0);
       const body = this.matter.add.rectangle(img.x, img.y - 0.8 * U, 1.2 * U, 1.6 * U, { isStatic: true, isSensor: true, label: 'checkpoint' });
       body.ref = { img, c, active: false };
     }
@@ -613,7 +614,8 @@ class Game extends Phaser.Scene {
     this.burst(this.pPuff, ex, ey, 18); this.burst(this.pSpark, ex, ey, 16); this.addScore(200, ex, ey);
     const parts = [en.img, ...(en.segs || []), ...(en.wings || [])]; if (en.aura) parts.push(en.aura);
     if (en.rig) en.rig.destroy(); if (en.shadow) en.shadow.destroy();
-    this.tweens.add({ targets: parts, alpha: 0, scale: '*=1.4', angle: 180, delay: 90, duration: 400, onComplete: () => parts.forEach(o => o.destroy()) });
+    if (this.pol) this.dissolveEnemy(en, parts);
+    else this.tweens.add({ targets: parts, alpha: 0, scale: '*=1.4', angle: 180, delay: 90, duration: 400, onComplete: () => parts.forEach(o => o.destroy()) });
   }
 
   // ---------- collisions ----------
@@ -628,7 +630,8 @@ class Game extends Phaser.Scene {
           const n = pr.collision.normal; let up = n.y < 0 ? { x: n.x, y: n.y } : { x: -n.x, y: -n.y };  // normal pointing up, out of the ground
           const ny = -up.y;
           if (ny > 0.45) { this.lastGround = this.time.now; this.groundNormal = up; }
-          if (start && this.prevSpeed > 6 && ny > 0.45 && this.time.now - (this.lastLand || 0) > 300) { this.lastLand = this.time.now; this.sfx(this.prevSpeed > 11 ? 'land_stone' : 'land', Math.min(0.8, 0.2 + this.prevSpeed / 25)); const q = this.pbody.position; this.burst(this.pDust, q.x, q.y + R * 0.9, Math.min(18, Math.round(this.prevSpeed))); this.landSquash = 1; }
+          if (start && this.prevSpeed > 6 && ny > 0.45 && this.time.now - (this.lastLand || 0) > 300) { this.lastLand = this.time.now; this.sfx(this.prevSpeed > 11 ? 'land_stone' : 'land', Math.min(0.8, 0.2 + this.prevSpeed / 25)); const q = this.pbody.position; this.burst(this.pDust, q.x, q.y + R * 0.9, Math.min(18, Math.round(this.prevSpeed))); this.landSquash = 1; this.onLandFx(this.prevSpeed, q.x, q.y + R * 0.9); }
+          else if (start && this.prevSpeed > 7 && Math.abs(up.x) > 0.7) { const q = this.pbody.position; this.onScrape(this.prevSpeed, q.x - up.x * R, q.y); }
         }
         if (!start) continue;
         this.playerHit(b);
@@ -663,7 +666,7 @@ class Game extends Phaser.Scene {
         const p = this.pbody, sp = Math.hypot(p.velocity.x, p.velocity.y);
         const above = p.position.y < en.body.position.y - 0.3 * U;
         if (above && Math.max(sp, this.prevSpeed) > 4) { this.killEnemy(en); MB.setVelocity(p, { x: p.velocity.x, y: -8 }); }
-        else this.hurt(en.body.position);
+        else { this.hurt(en.body.position); this.enemyRecoil(en); }
         break;
       }
       case 'gate': {
@@ -777,7 +780,7 @@ class Game extends Phaser.Scene {
       if (Phaser.Physics.Matter.Matter.Query.point(this.groundBodies, q).length) { this.lastGround = time; if (a === 0 || !this.groundNormal) this.groundNormal = this.groundNormal || { x: 0, y: -1 }; break; }
     }
     const grounded = time - this.lastGround < 130;     // coyote time
-    if (this.updateWorld(time, p, grounded, Math.min(0.05, this.game.loop.delta / 1000))) { this.syncOrb(p); this.updateParallax(); this.updateAmbient(time); return; }
+    if (this.updateWorld(time, p, grounded, Math.min(0.05, this.game.loop.delta / 1000))) { this.syncOrb(p); this.updateParallax(); this.updateAmbient(time); this.updatePolish(time, p, Math.hypot(p.velocity.x, p.velocity.y), false, 0); return; }
     let dir = (right ? 1 : 0) - (left ? 1 : 0);
     if (!dir && TILT.on) dir = Phaser.Math.Clamp(TILT.dir, -1, 1);   // analog tilt; keys/buttons override
     if (this.done) dir = 0;
@@ -854,7 +857,7 @@ class Game extends Phaser.Scene {
         const vx = Math.cos(en.t * 0.6), vy = Math.cos(en.t * 2.1) * 2.1 * 0.5 * U / (0.6 * ax || 1);
         en.img.setPosition(x, y).setFlipX(vx < 0).setRotation(Math.atan2(vy * 0.15, 1) * (vx < 0 ? -1 : 1)).setScale(en.s0 * (1 + Math.sin(en.t * 4) * 0.04), en.s0 * (1 - Math.sin(en.t * 4) * 0.04));
         en.hist.unshift({ x, y }); if (en.hist.length > 60) en.hist.pop();
-        en.segs.forEach((sg, i) => { const h = en.hist[Math.min(en.hist.length - 1, 4 + i * 5)]; sg.setPosition(h.x - (vx < 0 ? -1 : 1) * 10, h.y + 14 + Math.sin(en.t * 6 - i * 0.8) * 7); });
+        en.segs.forEach((sg, i) => { const h = en.hist[Math.min(en.hist.length - 1, 4 + i * 5)]; sg.setPosition(h.x - (vx < 0 ? -1 : 1) * 14, h.y + 20 + Math.sin(en.t * 6 - i * 0.8) * 10).setRotation(Math.sin(en.t * 6 - i * 0.8) * 0.3); });
         en.aura.setPosition(x, y).setAlpha(0.22 + Math.sin(en.t * 3) * 0.08);
         this.placeShadow(en.shadow, x, y + 0.6 * U);
       } else if (en.kind !== 'flyer') {
@@ -865,7 +868,7 @@ class Game extends Phaser.Scene {
         const f = Math.cos(en.t * 0.7) < 0 ? -1 : 1;
         MB.setPosition(en.body, { x, y });
         en.img.setPosition(x, y).setFlipX(f < 0);
-        en.wings.forEach((w, i) => { w.setPosition(x - f * 4, y - 6).setFlipX(f < 0).setOrigin(f < 0 ? 0.95 : 0.05, 0.9).setScale(0.55 + i * 0.05, (0.55 + i * 0.05) * (0.25 + 0.75 * Math.abs(flap))).setRotation(f * (flap * 0.5 - (i ? 0.3 : 0.6))); });
+        en.wings.forEach((w, i) => { w.setPosition(x - f * 4, y - 6).setFlipX(f < 0).setOrigin(f < 0 ? 0.95 : 0.05, 0.9).setScale((0.55 + i * 0.05) * 1.4, (0.55 + i * 0.05) * 1.4 * (0.25 + 0.75 * Math.abs(flap))).setRotation(f * (flap * 0.5 - (i ? 0.3 : 0.6))); });
         this.placeShadow(en.shadow, x, y + 0.4 * U);
       }
     }
@@ -878,11 +881,11 @@ class Game extends Phaser.Scene {
     }
     this.bolts = this.bolts.filter(b => !b.dead);
 
-    this.updateRollSound(sp, grounded);
+    this.updatePolish(time, p, sp, grounded, dir);
     this.updateParallax(); this.updateAmbient(time);
     this.speedText.setText('Speed ' + (sp * 60 / U).toFixed(1) + ' u/s');
   }
 }
 
-Object.assign(Game.prototype, window.TEO_FXM, window.TEO_WFX);
+Object.assign(Game.prototype, window.TEO_FXM, window.TEO_WFX, window.TEO_PFX);
 window.TEO_GAME = Game;

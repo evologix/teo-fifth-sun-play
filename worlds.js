@@ -117,7 +117,7 @@ const WFX = {
     this.jets = [];
     for (const j of LV.jets || []) {
       const x = this.X(j.x), gy = this.surfaceAt(x);
-      const im = this.add.sprite(x, gy + 8, 'lava_jet', 4).setOrigin(0.5, 1).setDepth(3); im.setScale(1.4 * U / 384);
+      const im = this.add.sprite(x, gy + 8, 'lava_jet', 4).setOrigin(0.5, 1).setDepth(3); im.setScale(1.85 * U / 384);
       const glow = this.add.image(x, gy - 60, 'fx_soft').setTint(0xff8a30).setBlendMode(Phaser.BlendModes.ADD).setScale(2.2).setAlpha(0).setDepth(3.1);
       const col = this.add.particles(x, gy - 30, 'fx_flame', { lifespan: { min: 300, max: 520 }, speedY: { min: -520, max: -360 }, speedX: { min: -20, max: 20 }, scale: { start: 0.9, end: 0.2 }, alpha: { start: 1, end: 0 }, tint: [0xfff0b0, 0xffb040, 0xff5a20], blendMode: 'ADD', frequency: LOWFX ? 40 : 16, emitting: false }).setDepth(3.2);
       const smoke = this.add.particles(x, gy - 40, 'fx_smoke', { lifespan: 900, speedY: { min: -60, max: -30 }, scale: { start: 0.2, end: 0.6 }, alpha: { start: 0.4, end: 0 }, tint: 0x5a4a5a, frequency: 120, emitting: false }).setDepth(3.05);
@@ -150,30 +150,30 @@ const WFX = {
     const x = this.X(e.x), y = this.Y(e.y), T = e.type;
     const sprite = (key, size, depth = 5) => { const im = SHEETS[key] ? this.add.sprite(x, y, key, 0) : this.add.image(x, y, key); im.setDepth(depth).setScale(size * U / 384); return im; };
     if (T === 'jaguar_warrior' || T === 'skeleton_dog' || T === 'poison_frog') {
-      const r = (T === 'poison_frog' ? 0.36 : 0.5) * U;
+      const r = (T === 'poison_frog' ? 0.42 : 0.58) * U;   // v4: sprites 1.45x, hitboxes ~1.16x
       const body = this.matter.add.circle(x, y - 4, r, { label: 'enemy', friction: 0.05, frictionAir: 0.01, restitution: 0, density: 0.002, inertia: Infinity });
-      const img = sprite(T, T === 'poison_frog' ? 1.05 : T === 'jaguar_warrior' ? 1.9 : 1.7);
+      const img = sprite(T, (T === 'poison_frog' ? 1.05 : T === 'jaguar_warrior' ? 1.9 : 1.7) * 1.45);
       const en = { kind: T, e, body, img, alive: true, home: { x, y: y - 4 }, r, dir: -1, t: Math.random() * 3, s0: img.scale, cd: 1 + Math.random(), face0: T === 'poison_frog' ? 1 : -1, state: 'patrol' };
       en.shadow = this.addShadow(2.6 * r); body.enemy = en; return en;
     }
     if (T === 'carnivorous_plant') {
       const gy = this.surfaceAt(x);
-      const img = sprite(T, 1.9, 4).setOrigin(0.5, 0.96).setPosition(x, gy + 6);
-      const hy = gy - 1.25 * U;
-      const body = this.matter.add.circle(x, hy, 0.62 * U, { isStatic: true, isSensor: true, label: 'enemy' });
+      const img = sprite(T, 1.9 * 1.4, 4).setOrigin(0.5, 0.96).setPosition(x, gy + 6);
+      const hy = gy - 1.25 * 1.4 * U;
+      const body = this.matter.add.circle(x, hy, 0.72 * U, { isStatic: true, isSensor: true, label: 'enemy' });
       const en = { kind: T, e, body, img, alive: true, t: (e.offset || 0), s0: img.scale, hx: x, hy, phase: 'open', harmless: true, period: e.period || 2.4 };
       en.shadow = this.addShadow(1.4 * U); this.placeShadow(en.shadow, x, gy); body.enemy = en; return en;
     }
     if (T === 'macaw' || T === 'bat') {
-      const img = sprite(T, T === 'macaw' ? 1.5 : 1.3);
-      const body = this.matter.add.circle(x, y, 0.42 * U, { isStatic: true, isSensor: true, label: 'enemy' });
+      const img = sprite(T, (T === 'macaw' ? 1.5 : 1.3) * 1.42);
+      const body = this.matter.add.circle(x, y, 0.5 * U, { isStatic: true, isSensor: true, label: 'enemy' });
       const en = { kind: T, e, body, img, alive: true, t: Math.random() * 6, base: { x, y }, s0: img.scale, face0: T === 'macaw' ? 1 : 1, state: 'hover', cd: 1.5 };
       en.shadow = this.addShadow(1.2 * U); body.enemy = en; return en;
     }
     if (T === 'sugar_skull') {
-      const img = sprite(T, 1.05);
-      const aura = this.add.image(x, y, 'fx_soft').setTint(0x9fe8ff).setBlendMode(Phaser.BlendModes.ADD).setScale(1.7).setAlpha(0.3).setDepth(4.8);
-      const body = this.matter.add.circle(x, y, 0.42 * U, { isStatic: true, isSensor: true, label: 'enemy' });
+      const img = sprite(T, 1.05 * 1.45);
+      const aura = this.add.image(x, y, 'fx_soft').setTint(0x9fe8ff).setBlendMode(Phaser.BlendModes.ADD).setScale(2.4).setAlpha(0.3).setDepth(4.8);
+      const body = this.matter.add.circle(x, y, 0.52 * U, { isStatic: true, isSensor: true, label: 'enemy' });
       const en = { kind: T, e, body, img, aura, alive: true, t: Math.random() * 6, home: { x, y }, pos: { x, y }, s0: img.scale };
       en.shadow = this.addShadow(1.1 * U); body.enemy = en; return en;
     }
@@ -192,7 +192,7 @@ const WFX = {
       if (en.kind === 'poison_frog') {
         // hopper: crouch, then leap toward the player (or along its patrol); squash frames
         if (grounded && en.cd <= 0 && en.state !== 'crouch') { en.state = 'crouch'; en.crouchT = 0.22; }
-        if (en.state === 'crouch') { en.crouchT -= dt; if (en.crouchT <= 0) { const d = near ? Math.sign(dx) || en.dir : en.dir; MB.setVelocity(b, { x: d * 3.6, y: -8.4 }); en.dir = d; en.state = 'air'; en.cd = 1.1 + Math.random() * 0.7; this.sfx('jump', 0.25, 1.6); } }
+        if (en.state === 'crouch') { en.crouchT -= dt; if (en.crouchT <= 0) { const d = near ? Math.sign(dx) || en.dir : en.dir; MB.setVelocity(b, { x: d * 3.6, y: -8.4 }); en.dir = d; en.state = 'air'; en.cd = 1.1 + Math.random() * 0.7; this.sfxAt('v_frog', b.position.x, b.position.y, 0.55); if (this.sigEm) this.sigEm.slime.explode(5, b.position.x, b.position.y + en.r); } }
         else if (grounded && en.state === 'air' && b.velocity.y >= 0) { en.state = 'idle'; en.land = 1; MB.setVelocity(b, { x: 0, y: b.velocity.y }); }
         const f = en.state === 'crouch' ? 1 : en.state === 'air' ? 2 : 0; en.img.setFrame(f);
         en.land = Math.max(0, (en.land || 0) - dt * 5); const sq = Math.sin(en.land * Math.PI) * 0.18;
@@ -201,21 +201,22 @@ const WFX = {
         // patrol, chase, and pounce when close
         let want = near ? Math.sign(dx) : en.dir;
         if (b.position.x < xMin - 2 * U && want < 0) want = 1; if (b.position.x > xMax + 2 * U && want > 0) want = -1;
-        if (grounded) MB.setVelocity(b, { x: Phaser.Math.Linear(b.velocity.x, want * (near ? 4.2 : 2.2), 0.08), y: b.velocity.y });
-        if (near && grounded && en.cd <= 0 && Math.abs(dx) < 4.5 * U) { MB.setVelocity(b, { x: Math.sign(dx) * 7, y: -8.5 }); en.cd = 2.2; this.sfx('fire', 0.25, 0.6); }
+        if (en.state === 'tell') { MB.setVelocity(b, { x: b.velocity.x * 0.8, y: b.velocity.y }); en.tell -= dt; if (en.tell <= 0) { en.state = 'patrol'; MB.setVelocity(b, { x: en.dashDir * 7, y: -8.5 }); if (this.pStep) this.pStep.explode(8, b.position.x, b.position.y + en.r); } }
+        else if (grounded) MB.setVelocity(b, { x: Phaser.Math.Linear(b.velocity.x, want * (near ? 4.2 : 2.2), 0.08), y: b.velocity.y });
+        if (en.state !== 'tell' && near && grounded && en.cd <= 0 && Math.abs(dx) < 4.5 * U) { en.state = 'tell'; en.tell = 0.3; en.dashDir = Math.sign(dx) || 1; en.cd = 2.2; this.sfxAt('v_jaguar', b.position.x, b.position.y, 0.7); }
         en.img.setFrame(grounded ? frame(6, 4 + Math.abs(b.velocity.x) * 2.5) : 2);
         if (Math.abs(b.velocity.x) > 0.3) en.face = Math.sign(b.velocity.x);
       } else {
         // skeleton dog: trots, then on sight crouches (tell) and dashes straight at the player
         if (en.state === 'patrol') {
           MB.setVelocity(b, { x: Phaser.Math.Linear(b.velocity.x, en.dir * 1.6, 0.1), y: b.velocity.y });
-          if (near && grounded && en.cd <= 0) { en.state = 'tell'; en.tell = 0.45; en.dashDir = Math.sign(dx) || 1; this.sfx('stone_bonk', 0.3, 1.8); }
+          if (near && grounded && en.cd <= 0) { en.state = 'tell'; en.tell = 0.45; en.dashDir = Math.sign(dx) || 1; this.sfxAt('v_dog', b.position.x, b.position.y, 0.7); }
         } else if (en.state === 'tell') { MB.setVelocity(b, { x: 0, y: b.velocity.y }); en.tell -= dt; en.img.setTint(0xff9a9a); if (en.tell <= 0) { en.state = 'dash'; en.dash = 0.8; en.img.clearTint(); } }
         else if (en.state === 'dash') { MB.setVelocity(b, { x: en.dashDir * 10.5, y: b.velocity.y }); en.dash -= dt; if (en.dash <= 0) { en.state = 'patrol'; en.cd = 1.6; } }
         en.img.setFrame(en.state === 'tell' ? 0 : frame(6, en.state === 'dash' ? 16 : 6));
         if (Math.abs(b.velocity.x) > 0.3) en.face = Math.sign(b.velocity.x);
       }
-      if (en.kind !== 'poison_frog') { const bob = en.state === 'tell' ? 0.06 : 0; en.img.setScale(en.s0 * (1 + bob), en.s0 * (1 - bob)); }
+      if (en.kind !== 'poison_frog') en.img.setScale(en.s0);   // squash/breath/anticipation applied by polishEnemy
       else if (Math.abs(b.velocity.x) > 0.3) en.face = Math.sign(b.velocity.x);
       en.img.setFlipX((en.face || en.dir) * en.face0 < 0);
       en.img.setPosition(b.position.x, b.position.y - en.img.displayHeight * 0.5 + en.r + 4);
@@ -229,12 +230,12 @@ const WFX = {
       const ph = c < P - 0.45 ? 'open' : c < P ? 'tell' : c < P + 0.55 ? 'snap' : 'reopen';
       if (ph !== en.phase) {
         en.phase = ph;
-        if (ph === 'snap') { this.sfx('card_impact', 0.25, 1.9); this.tweens.add({ targets: en.img, scaleX: en.s0 * 1.12, scaleY: en.s0 * 0.92, duration: 70, yoyo: true }); }
+        if (ph === 'snap') { this.sfxAt('v_plant', en.hx, en.hy, 0.6); if (en.pol) en.pol.snap = 1; }
       }
       en.harmless = ph === 'open' || ph === 'reopen';
       en.img.setFrame(ph === 'snap' ? 2 : ph === 'tell' ? 1 : 0);
       en.img.setAngle(ph === 'tell' ? Math.sin(en.t * 60) * 3 : Math.sin(en.t * 1.7) * 2);
-      if (ph === 'snap' && Math.hypot(p.position.x - en.hx, p.position.y - en.hy) < 0.62 * U + R) this.hurt({ x: en.hx, y: en.hy });
+      if (ph === 'snap' && Math.hypot(p.position.x - en.hx, p.position.y - en.hy) < 0.72 * U + R) this.hurt({ x: en.hx, y: en.hy });
       return;
     }
     if (en.kind === 'macaw') {
@@ -244,9 +245,10 @@ const WFX = {
     }
     if (en.kind === 'bat') {
       let x, y;
-      if (en.state === 'hover') {
+      if (en.state === 'hover' || en.state === 'wind') {
         x = en.base.x + Math.sin(en.t * 0.9) * 0.8 * U; y = en.base.y + Math.sin(en.t * 2.3) * 0.3 * U; en.cd -= dt;
-        if (en.cd <= 0 && Math.abs(dx) < 6 * U && dy > 0 && dy < 7 * U) { en.state = 'swoop'; en.s = 0; en.from = { x, y }; en.to = { x: p.position.x, y: p.position.y }; this.sfx('card_whoosh', 0.3, 1.7); }
+        if (en.wind > 0) { en.wind -= dt; y -= (0.35 - en.wind) * 60; if (en.wind <= 0) { en.state = 'swoop'; en.s = 0; en.from = { x, y }; en.to = { x: p.position.x, y: p.position.y }; this.sfx('card_whoosh', 0.3, 1.7); } }
+        else if (en.cd <= 0 && Math.abs(dx) < 6 * U && dy > 0 && dy < 7 * U) { en.wind = 0.35; en.state = 'wind'; this.sfxAt('v_bat', x, y, 0.6); }
       } else {
         en.s += dt / 1.3; const s = Math.min(1, en.s), q = s < 0.5 ? s * 2 : 2 - s * 2;   // dive to the target and climb back
         const back = { x: en.from.x + (en.to.x - en.from.x) * 2, y: en.from.y };
@@ -273,7 +275,7 @@ const WFX = {
   updateWorld(time, p, grounded, dt) {
     for (const J of this.jets || []) {
       const c = ((time + J.off) % J.period + J.period) % J.period, on = c < J.dur, warn = !on && c > J.period - 550;
-      if (on !== J.on) { J.on = on; if (on) { J.col.start(); this.sfx('fire', 0.35, 0.55); } else J.col.stop(); }
+      if (on !== J.on) { J.on = on; if (on) { J.col.start(); this.sfxAt('v_jet', J.x, J.gy - 60, 0.6); } else J.col.stop(); }
       if (warn !== J.warn) { J.warn = warn; if (warn) J.smoke.start(); else J.smoke.stop(); }
       J.im.setFrame(on ? Math.floor(time / 70) % 4 : 4);
       J.glow.setAlpha(on ? 0.55 + Math.sin(time / 50) * 0.1 : warn ? 0.18 + Math.sin(time / 40) * 0.08 : 0);

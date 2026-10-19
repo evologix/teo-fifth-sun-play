@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Teò">
-<meta name="theme-color" content="#07050d"><link rel="apple-touch-icon" href="icon-180.png?v=913e6f3"><link rel="icon" href="icon-180.png?v=913e6f3"><link rel="manifest" href="manifest.webmanifest?v=913e6f3">
+<meta name="theme-color" content="#07050d"><link rel="apple-touch-icon" href="icon-180.png?v=cd0d287"><link rel="icon" href="icon-180.png?v=cd0d287"><link rel="manifest" href="manifest.webmanifest?v=cd0d287">
 <style>html,body{margin:0;height:100%;background:#07050d;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}#game{width:100%;height:100%}
 #pad{position:fixed;inset:0;pointer-events:none;z-index:10;user-select:none;-webkit-user-select:none}
 .btn{position:absolute;bottom:4vh;width:15vmin;height:15vmin;min-width:84px;min-height:84px;border-radius:50%;pointer-events:auto;touch-action:none;
@@ -20,18 +20,22 @@ body.tilting #bL,body.tilting #bR{opacity:.25}
 body.portrait #rotate{display:flex}
 .hbtn.bad{background:rgba(200,60,40,.55)}
 #bTilt.on{background:rgba(255,190,40,.75);border-color:#ffd860;color:#2a1600}
-body.menu #pad{display:none}
+body.menu #pad{display:none}body.capture #pad,body.capture #bMute,body.capture #bVol,body.capture #volPanel,body.capture #rotate{display:none!important}
+#bVol{position:fixed;z-index:20;top:calc(2vh + 64px);right:calc(3vw + 15vmin + 50px + 11vmin);display:flex}body.menu #bVol{right:calc(3vw + 11vmin);top:2vh}
+#volPanel{position:fixed;z-index:21;display:none;top:calc(2vh + 64px + 8vmin);right:calc(3vw + 15vmin + 50px);background:rgba(30,15,5,.85);border:2px solid #d8a85a;border-radius:2vmin;padding:1.5vmin 2.5vmin;color:#ffe9c0;font:bold 2.4vmin Georgia,serif;flex-direction:column;gap:1vmin}body.menu #volPanel{right:3vw;top:calc(2vh + 8vmin)}#volPanel.open{display:flex}#volPanel label{display:flex;align-items:center;gap:1.5vmin;justify-content:space-between}#volPanel input{width:22vmin;min-width:110px}
 #bMute{position:fixed;z-index:20;top:calc(2vh + 64px);right:calc(3vw + 15vmin + 50px);display:flex}
 body.menu #bMute{right:3vw;top:2vh}
 @font-face{font-family:Cinzel;src:url(assets/fonts/Cinzel.ttf) format('truetype');font-weight:400 900;font-display:block}
 #bL{left:3vw}#bR{left:calc(3vw + 18vmin)}#bF{right:calc(3vw + 18vmin)}#bJ{right:3vw}</style>
 </head><body><div id="game"></div>
 <div id="pad"><div class="btn" id="bL" data-k="left">&#9664;</div><div class="btn" id="bR" data-k="right">&#9654;</div><div class="btn" id="bF" data-k="fire" style="font-size:3.4vmin">FIRE</div><div class="btn" id="bJ" data-k="jump" style="font-size:3.4vmin">JUMP</div><div class="hbtn" id="bCentre" title="Recalibrate tilt">&#8853;</div><div class="hbtn" id="bTilt" title="Tilt to roll">TILT</div><div id="tiltPrompt">Tap to enable tilt</div></div>
-<div class="hbtn" id="bMute" title="Mute (M)">&#128266;</div><div style="font-family:Cinzel;position:absolute;opacity:0;pointer-events:none">.</div>
+<div class="hbtn" id="bMute" title="Mute (M)">&#128266;</div><div class="hbtn" id="bVol" title="Sound balance">&#9835;</div>
+<div id="volPanel"><label>SFX <input type="range" id="volSfx" min="0" max="100"></label><label>Music <input type="range" id="volMus" min="0" max="100"></label></div><div style="font-family:Cinzel;position:absolute;opacity:0;pointer-events:none">.</div>
 <div id="rotate"><div style="font-size:14vmin">&#10227;</div>Rotate your device<br><span style="font-size:3.5vmin;opacity:.7">Teò plays in landscape</span></div>
-<script src="lib/phaser.min.js?v=913e6f3"></script>
-<script src="fx.js?v=913e6f3"></script>
-<script src="worlds.js?v=913e6f3"></script>
-<script src="main.js?v=913e6f3"></script>
-<script src="scenes.js?v=913e6f3"></script>
+<script src="lib/phaser.min.js?v=cd0d287"></script>
+<script src="fx.js?v=cd0d287"></script>
+<script src="worlds.js?v=cd0d287"></script>
+<script src="polish.js?v=cd0d287"></script>
+<script src="main.js?v=cd0d287"></script>
+<script src="scenes.js?v=cd0d287"></script>
 </body></html>

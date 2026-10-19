@@ -27,8 +27,9 @@ const AUDIO = {
   ui() { const b = document.getElementById('bMute'); if (b) { b.textContent = this.muted() ? '\u{1F507}' : '\u{1F50A}'; b.classList.toggle('on', !this.muted()); } },
 };
 const MUSIC = {
-  cur: null, key: null, FADE: 900,
+  cur: null, key: null, FADE: 900, base: 0.42,
   play(scene, key, vol = 0.42) {
+    this.base = vol; vol *= (window.AUDIO_MIX ? AUDIO_MIX.music() : 1);
     if (this.key === key && this.cur && this.cur.isPlaying) return;
     const old = this.cur;
     if (old) scene.tweens.add({ targets: old, volume: 0, duration: this.FADE, onComplete: () => { old.stop(); old.destroy(); } });
@@ -275,6 +276,13 @@ function bootGame() { if (TEO_PHASER) return; TEO_PHASER = new Phaser.Game({
   input: { mouse: { preventDefaultDown: true } },
   scene: SKIP_TITLE ? [window.TEO_GAME, Title, Complete, Finale] : [Title, window.TEO_GAME, Complete, Finale],
 }); window.TEO_PHASER = TEO_PHASER;
-AUDIO.game = TEO_PHASER; TEO_PHASER.sound.mute = AUDIO.muted(); }
+AUDIO.game = TEO_PHASER; TEO_PHASER.sound.mute = AUDIO.muted() || QS.has('capture');
+// ?capture=1 (promo capture): the RAF loop sleeps and the page drives fixed 1/60 s frames; step(n, true) returns a JPEG of the frame
+if (QS.has('capture')) {
+  document.body.classList.add('capture'); const g = TEO_PHASER, DT = 1000 / 60; let T = 0;
+  g.events.once('ready', () => { g.loop.sleep(); T = g.loop.now || performance.now(); });
+  window.TEO_CAP = { step(n = 1, shot = false, q = 0.9) { for (let i = 0; i < n; i++) { T += DT; Object.assign(g.loop, { delta: DT, rawDelta: DT, now: T, time: T, actualFps: 60 }); g.step(T, DT); }
+    return shot ? g.canvas.toDataURL('image/jpeg', q) : null; }, ready: () => g.isBooted && !!T };
+} }
 // wait (briefly) for the Cinzel webfont so canvas text uses it
 try { Promise.race([document.fonts.load('900 30px Cinzel'), new Promise(r => setTimeout(r, 1500))]).then(bootGame, bootGame); } catch (_) { bootGame(); }
