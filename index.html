@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Teò">
-<meta name="theme-color" content="#07050d"><link rel="apple-touch-icon" href="icon-180.png?v=78a5a6f"><link rel="icon" href="icon-180.png?v=78a5a6f"><link rel="manifest" href="manifest.webmanifest?v=78a5a6f">
+<meta name="theme-color" content="#07050d"><link rel="apple-touch-icon" href="icon-180.png?v=913e6f3"><link rel="icon" href="icon-180.png?v=913e6f3"><link rel="manifest" href="manifest.webmanifest?v=913e6f3">
 <style>html,body{margin:0;height:100%;background:#07050d;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}#game{width:100%;height:100%}
 #pad{position:fixed;inset:0;pointer-events:none;z-index:10;user-select:none;-webkit-user-select:none}
 .btn{position:absolute;bottom:4vh;width:15vmin;height:15vmin;min-width:84px;min-height:84px;border-radius:50%;pointer-events:auto;touch-action:none;
@@ -13,7 +13,7 @@ display:flex;align-items:center;justify-content:center;box-sizing:border-box;-we
 .hbtn{position:absolute;top:calc(2vh + 64px);display:none;align-items:center;justify-content:center;height:7vmin;min-height:40px;padding:0 2.2vmin;border-radius:3vmin;pointer-events:auto;touch-action:manipulation;
 background:rgba(255,220,150,.18);border:2px solid rgba(255,235,190,.5);color:rgba(255,245,220,.9);font:bold 2.6vmin Georgia,serif;min-width:64px;box-sizing:border-box;-webkit-tap-highlight-color:transparent;cursor:pointer}
 .hbtn.on{background:rgba(255,190,80,.5)}.hbtn.flash{background:rgba(255,255,255,.6)}
-#bTilt{right:3vw}#bCentre{right:calc(3vw + 15vmin);min-width:40px}
+#bTilt{top:auto;bottom:calc(4vh + 4vmin);left:50%;transform:translateX(-50%);height:9vmin;min-height:52px;padding:0 4vmin;font-size:3.6vmin;background:rgba(40,20,5,.6);border:3px solid #ffd860;color:#ffe9a0}#bCentre{top:auto;bottom:calc(4vh + 4vmin);left:calc(50% + 14vmin);height:9vmin;min-height:52px;min-width:52px;font-size:4vmin}
 body.tilting #bL,body.tilting #bR{opacity:.25}
 #tiltPrompt{position:absolute;top:12vh;left:50%;transform:translateX(-50%);display:none;pointer-events:auto;padding:1.5vmin 3vmin;border-radius:2vmin;background:rgba(20,10,5,.75);border:2px solid rgba(255,220,150,.6);color:#ffe9c0;font:bold 3vmin Georgia,serif;cursor:pointer}
 #rotate{position:fixed;inset:0;z-index:50;display:none;background:#07050d;color:#ffe9c0;font:bold 6vmin Georgia,serif;align-items:center;justify-content:center;text-align:center;flex-direction:column}
@@ -29,9 +29,9 @@ body.menu #bMute{right:3vw;top:2vh}
 <div id="pad"><div class="btn" id="bL" data-k="left">&#9664;</div><div class="btn" id="bR" data-k="right">&#9654;</div><div class="btn" id="bF" data-k="fire" style="font-size:3.4vmin">FIRE</div><div class="btn" id="bJ" data-k="jump" style="font-size:3.4vmin">JUMP</div><div class="hbtn" id="bCentre" title="Recalibrate tilt">&#8853;</div><div class="hbtn" id="bTilt" title="Tilt to roll">TILT</div><div id="tiltPrompt">Tap to enable tilt</div></div>
 <div class="hbtn" id="bMute" title="Mute (M)">&#128266;</div><div style="font-family:Cinzel;position:absolute;opacity:0;pointer-events:none">.</div>
 <div id="rotate"><div style="font-size:14vmin">&#10227;</div>Rotate your device<br><span style="font-size:3.5vmin;opacity:.7">Teò plays in landscape</span></div>
-<script src="lib/phaser.min.js?v=78a5a6f"></script>
-<script src="fx.js?v=78a5a6f"></script>
-<script src="worlds.js?v=78a5a6f"></script>
-<script src="main.js?v=78a5a6f"></script>
-<script src="scenes.js?v=78a5a6f"></script>
+<script src="lib/phaser.min.js?v=913e6f3"></script>
+<script src="fx.js?v=913e6f3"></script>
+<script src="worlds.js?v=913e6f3"></script>
+<script src="main.js?v=913e6f3"></script>
+<script src="scenes.js?v=913e6f3"></script>
 </body></html>
