@@ -237,7 +237,7 @@ class Game extends Phaser.Scene {
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.W, this.H);
-    cam.startFollow(this.orb, true, 0.08, 0.08);
+    cam.startFollow(this.orb, !CAPTURE, 0.08, 0.08);   // capture: sub-pixel camera so the 1.5x upscale has no 1 px stair-steps
     cam.setDeadzone(80, 60);
     cam.centerOn(this.orb.x, this.orb.y);
 
@@ -259,6 +259,7 @@ class Game extends Phaser.Scene {
     this.matter.world.on('collisionactive', (e) => this.onCollide(e.pairs, false));
 
     this.makeHud();
+    if (CAPTURE) { const mw = this.matter.world; mw.drawDebug = false; if (mw.debugGraphic) mw.debugGraphic.setVisible(false).clear(); }   // never any Matter debug draw in capture
     this.events.once('shutdown', () => { if (this.rollSnd) { this.rollSnd.stop(); this.rollSnd.destroy(); } PAD.scene = null; });
     if (AUDIO.unlocked()) this.startAudio();
     setMenu(false);
@@ -704,16 +705,26 @@ class Game extends Phaser.Scene {
   makeHud() {
     const st = { fontFamily: 'Georgia, serif', fontSize: '24px', color: '#ffe9b0', stroke: '#1a0c04', strokeThickness: 5 };
     this.makeFancyHud();
-    this.add.text(VW / 2, VH - 14, 'A/D roll  Space jump  J/click fire  R restart  F effects  M mute', Object.assign({}, st, { fontSize: '16px' })).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100).setAlpha(0.8);
+    if (!CAPTURE) this.add.text(VW / 2, VH - 14, 'A/D roll  Space jump  J/click fire  R restart  F effects  M mute', Object.assign({}, st, { fontSize: '16px' })).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100).setAlpha(0.8);
     this.toastText = this.add.text(VW / 2, 90, '', Object.assign({}, st, { fontSize: '28px' })).setOrigin(0.5).setScrollFactor(0).setDepth(100).setAlpha(0);
-    this.speedText = this.add.text(22, 104, '', Object.assign({}, st, { fontSize: '16px' })).setScrollFactor(0).setDepth(100).setAlpha(0.7);
-    this.leftText = this.add.text(22, 78, '', Object.assign({}, st, { fontSize: '20px' })).setScrollFactor(0).setDepth(100);
+    // 'still to find' hint on a small painted plaque under the counters panel (same leather/gold style as the HUD)
+    this.leftPanel = this.add.graphics().setScrollFactor(0).setDepth(99);
+    this.leftText = this.add.text(30, 92, '', Object.assign({}, st, { fontSize: '18px', strokeThickness: 4 })).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100);
+    if (CAPTURE) { this.leftPanel.setVisible(false); this.leftText.setVisible(false); }   // promo capture: clean frame
     this.updateHud();
   }
   updateHud() {
     const c = this.counts, t = this.totals;
     this.refreshHudCounts(!!this.hudReady); this.hudReady = true;
-    if (this.leftText) { const r = this.remaining(); this.leftText.setText(r.jade + r.pyrite + r.sun > 0 ? 'Left: ' + [r.jade + ' ' + this.cname(), r.pyrite + ' pyrite', r.sun + ' sun'].join('  ·  ') : 'All found! Go to the Sun Gate ▶').setColor(r.jade + r.pyrite + r.sun > 0 ? '#ffe9b0' : '#ffe080'); }
+    if (this.leftText) {
+      const r = this.remaining(), any = r.jade + r.pyrite + r.sun > 0;
+      this.leftText.setText(any ? 'Left: ' + [r.jade + ' ' + this.cname(), r.pyrite + ' pyrite', r.sun + ' sun'].join('  ·  ') : 'All found! Go to the Sun Gate ▶').setColor(any ? '#ffe9b0' : '#ffe080');
+      const w = Math.ceil(this.leftText.width) + 32, g = this.leftPanel;
+      if (g && g.lastW !== w) { g.lastW = w; g.clear();
+        g.fillStyle(0x0c0604, 0.3).fillRoundedRect(17, 80, w, 30, 10); g.fillStyle(0x2a170c, 0.78).fillRoundedRect(14, 77, w, 30, 10);
+        g.fillStyle(0x4a2c16, 0.55).fillRoundedRect(16, 79, w - 4, 12, { tl: 8, tr: 8, bl: 0, br: 0 });
+        g.lineStyle(1.5, 0xd8a85a, 0.85).strokeRoundedRect(14, 77, w, 30, 10); }
+    }
     this.updateGoalLock();
   }
   toast(msg) {
@@ -883,7 +894,6 @@ class Game extends Phaser.Scene {
 
     this.updatePolish(time, p, sp, grounded, dir);
     this.updateParallax(); this.updateAmbient(time);
-    this.speedText.setText('Speed ' + (sp * 60 / U).toFixed(1) + ' u/s');
   }
 }
 

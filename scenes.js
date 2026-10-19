@@ -179,7 +179,7 @@ class Complete extends Phaser.Scene {
     panel.fillStyle(0x4a2c16, 0.55).fillRoundedRect(PX - 216, 134, 432, 150, { tl: 20, tr: 20, bl: 0, br: 0 }); panel.lineStyle(3, 0xd8a85a, 1).strokeRoundedRect(PX - 220, 130, 440, 400, 22);
     this.tweens.add({ targets: panel, alpha: 1, delay: 900, duration: 300 });
     const rows = [['TIME', st.time, (v) => { const m = Math.floor(v / 60), s = v - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }],
-      ['JADE', st.jade, (v) => Math.round(v) + ' / ' + st.jadeTotal], ['SECRETS', st.secrets, (v) => Math.round(v) + ' / ' + st.secretsTotal], ['SCORE', st.score, (v) => Math.round(v).toLocaleString('en-GB')]];
+      [(L.collect || 'jade').toUpperCase(), st.jade, (v) => Math.round(v) + ' / ' + st.jadeTotal], ['SECRETS', st.secrets, (v) => Math.round(v) + ' / ' + st.secretsTotal], ['SCORE', st.score, (v) => Math.round(v).toLocaleString('en-GB')]];
     rows.forEach(([label, val, fmt], i) => {
       const y = 170 + i * 58;
       const lt = this.add.text(PX - 190, y, label, Object.assign({}, TXT, { fontSize: '24px', color: '#d8a85a', strokeThickness: 4 })).setAlpha(0);
@@ -272,17 +272,29 @@ function bootGame() { if (TEO_PHASER) return; TEO_PHASER = new Phaser.Game({
   width: VW, height: VH,
   backgroundColor: '#120c1c',
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  physics: { default: 'matter', matter: { gravity: { y: 1 }, debug: false } },
+  physics: { default: 'matter', matter: Object.assign({ gravity: { y: 1 }, debug: false }, CAPTURE ? { runner: { isFixed: true, delta: 1000 / 60 } } : {}) },
   input: { mouse: { preventDefaultDown: true } },
   scene: SKIP_TITLE ? [window.TEO_GAME, Title, Complete, Finale] : [Title, window.TEO_GAME, Complete, Finale],
 }); window.TEO_PHASER = TEO_PHASER;
-AUDIO.game = TEO_PHASER; TEO_PHASER.sound.mute = AUDIO.muted() || QS.has('capture');
-// ?capture=1 (promo capture): the RAF loop sleeps and the page drives fixed 1/60 s frames; step(n, true) returns a JPEG of the frame
-if (QS.has('capture')) {
-  document.body.classList.add('capture'); const g = TEO_PHASER, DT = 1000 / 60; let T = 0;
-  g.events.once('ready', () => { g.loop.sleep(); T = g.loop.now || performance.now(); });
-  window.TEO_CAP = { step(n = 1, shot = false, q = 0.9) { for (let i = 0; i < n; i++) { T += DT; Object.assign(g.loop, { delta: DT, rawDelta: DT, now: T, time: T, actualFps: 60 }); g.step(T, DT); }
-    return shot ? g.canvas.toDataURL('image/jpeg', q) : null; }, ready: () => g.isBooted && !!T };
+AUDIO.game = TEO_PHASER; TEO_PHASER.sound.mute = AUDIO.muted() || CAPTURE;
+// ?capture=1 (promo capture): a fully deterministic fixed-step mode. Phaser's RAF loop never ticks; the page drives every frame with
+// TEO_CAP.step(n) = n x game.step(T, 1000/60), so physics (Matter fixed 1/60 s runner), the scene clock, particles, anims, camera lerp AND
+// tweens (which normally run on Date.now()) all advance exactly 1/60 s per frame, however long the page takes to screenshot it.
+// NB: game.loop.sleep() inside the READY event is a no-op (READY fires before loop.start()), which is why the loop has to be put to sleep
+// right after start(); a guard in step() re-sleeps it should anything ever wake it.
+if (CAPTURE) {
+  document.body.classList.add('capture'); const g = TEO_PHASER, L = g.loop, DT = 1000 / 60; let T = 0, started = false;
+  const start0 = L.start.bind(L);
+  L.start = (cb) => { start0(cb); L.sleep(); T = Math.max(L.now || 0, 1000); started = true; };
+  const fixScenes = () => { for (const sc of g.scene.scenes) { const tw = sc.sys.tweens; if (tw && !tw.capFixed) { tw.capFixed = true; tw.getDelta = () => DT; } } };
+  window.TEO_CAP = {
+    step(n = 1, shot = false, q = 0.9) {
+      if (L.running) L.sleep();
+      for (let i = 0; i < n; i++) { fixScenes(); T += DT; Object.assign(L, { delta: DT, rawDelta: DT, now: T, time: T, actualFps: 60, frame: L.frame + 1 }); g.step(T, DT); }
+      return shot ? g.canvas.toDataURL('image/jpeg', q) : null;
+    },
+    ready: () => g.isBooted && started, rafRunning: () => L.running, T: () => T,
+  };
 } }
 // wait (briefly) for the Cinzel webfont so canvas text uses it
 try { Promise.race([document.fonts.load('900 30px Cinzel'), new Promise(r => setTimeout(r, 1500))]).then(bootGame, bootGame); } catch (_) { bootGame(); }

@@ -2,6 +2,7 @@
    One light: upper-left, warm. Shared palette below. ?lowfx=1 disables the heavy bits (particles, fog, FX pipelines, god rays). */
 'use strict';
 const QS = new URLSearchParams(location.search);
+const CAPTURE = QS.has('capture');   // promo capture mode (scenes.js TEO_CAP): fixed-step, no on-screen controls
 const LOWFX = QS.has('lowfx') && QS.get('lowfx') !== '0';
 const FXOFF = new Set((QS.get('fxoff') || '').split(','));   // debug: fg,vig,fog,rays,amb,glow,braz
 const PAL = { light: '#fff1c8', warm: '#ffb24a', ember: '#ff7a2a', jade: '#3fbf8a', jadeDeep: '#0f5a44', stone: '#8a6a4e', stoneDark: '#3a2618', shadow: '#1a0d06', sky: '#e8b070' };
